@@ -39,7 +39,7 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
     }
   },
   {
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 1*60 * 1000, // 1 minutes
     retry: 2, // Retry failed requests twice
    
     onError: (error) => {
@@ -50,11 +50,12 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
     }
   }
 );
+console.log(drafts)
  useEffect(() => {
-  if (data) {
-    setFilteredSchedules(data.data||[]);
+  if (drafts) {
+    setFilteredSchedules(drafts||[]);
   }
-}, [data]);
+}, [drafts]);
 
   const submitToMD = useMutation(
     (scheduleId) => axios.patch(`${API}/api/scheduling/disbursement-schedules/${scheduleId}/submit`),
