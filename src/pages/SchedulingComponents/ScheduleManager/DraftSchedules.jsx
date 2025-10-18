@@ -50,7 +50,7 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
     }
   }
 );
-console.log(drafts)
+
  useEffect(() => {
   if (drafts) {
     setFilteredSchedules(drafts||[]);
