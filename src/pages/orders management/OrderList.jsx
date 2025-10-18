@@ -628,14 +628,20 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           </span>
         )}
       </div>
-      <div className="flex ">
+       {order.remarks && (
+        <div>
+          <p className="font-medium text-gray-600">Remarks:</p>
+          <p className="text-gray-600">{order.remarks}</p>
+        </div>
+      )}
+      <div className="flex  justify-between">
 
         {(accRoles?.includes(user.Department))&&(<button 
           onClick={() => {
             setSelectedRequest(prev => prev === order ? null : order)
             setIsExportOpen(true)
           }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-md rounded-lg p-1 ml-1"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
           >
           <FileText className="h-4 w-4" />
           Export Memo
@@ -646,7 +652,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           <button
       
           onClick={()=> setOpenResponseOrderId(prev=>prev===order._id? null:order._id)}
-       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-md rounded-lg  ml-1 p-3"
+       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg px-4 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
        >
           Response
        
@@ -675,12 +681,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
 
         }
       </div>
-      {order.remarks && (
-        <div>
-          <p className="font-medium text-gray-600">Remarks:</p>
-          <p className="text-gray-600">{order.remarks}</p>
-        </div>
-      )}
+     
     </motion.div>
   );
   const renderEmptyState = () => (
