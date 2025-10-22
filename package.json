@@ -15,7 +15,7 @@
     "axios": "^1.12.2",
     "buffer": "^6.0.3",
     "chart.js": "^4.4.9",
-    "cypress": "^14.3.2",
+    "cypress": "^14.4.1",
     "date-fns": "^4.1.0",
     "electron": "^38.1.2",
     "framer-motion": "^12.5.0",
