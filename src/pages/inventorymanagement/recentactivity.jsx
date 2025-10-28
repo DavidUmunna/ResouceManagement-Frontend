@@ -5,7 +5,8 @@ import PaginationControls from "../../components/Paginationcontrols";
 import axios from "axios";
 import { useUser } from "../../components/usercontext";
 import { isProd } from '../../components/env';
-
+import { Trash, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 // RecentActivity Component
 const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
       const {user}=useUser();
@@ -72,6 +73,31 @@ const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
 
         }
       }
+
+    const DeleteLog=async(activityId)=>{
+      try{
+        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+        const response= await axios.delete(`${API_URL}/inventory/activities/${activityId}`,{withCredentials:true})
+        if(response.data.success==true){
+          toast.success(response.data.message,{autoClose:1000})
+        }
+        
+        setData((prev)=>({
+          ...prev,
+          activities:prev.activities.filter((log)=>(log._id!==activityId))
+                  
+        }))
+        
+
+      }catch(error){
+        if(error.response?.data.success==false){
+
+          toast.error(error.response?.data.message,{autoClose:1000})
+        }
+        if (isProd)Sentry.captureException(error)
+
+      }
+    }
    
    const filteredItems = data.activities.filter(item => {
     
@@ -165,11 +191,26 @@ const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
                       </p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  activity.action === 'Added' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                  {activity.quantity} {activity.unit || 'units'}
-                </span>
+                <div className='flex justify-between'>
+
+                  <span className={`px-2 py-1 mr-3 text-xs rounded-full  ${
+                    activity.action === 'Added' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                   }`}>
+                    {activity.quantity} {activity.unit || 'units'}
+                  </span>
+                  
+                  <button 
+                  onClick={(e)=>{
+                    e.stopPropagation()
+                    DeleteLog(activity._id)
+                  }}
+                  className='hover:translate-x-2'>
+                     <Trash2 className='w-5 h-5 text-red-500 cursor-pointer'/>
+                  </button>
+                  
+
+
+                </div>
               </div>
               {activity.user && (
                 <p className="text-xs text-gray-400 mt-1">

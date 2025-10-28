@@ -3,9 +3,7 @@
 import * as Sentry from '@sentry/react';
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../components/usercontext';
-
 import axios from "axios";
-import RecentActivity from './recentactivity';
 import { Plus, Minus,Trash2 } from "lucide-react"
 import PaginationControls from '../../components/Paginationcontrols';
 import Categoryform from './Category_form';

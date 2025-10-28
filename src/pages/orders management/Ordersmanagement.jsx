@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import OrderList from './OrderList';
 import Duplicates from './Duplicates';
 import { get_user_orders } from '../../services/OrderService';
-import CompletedOrdersList from './Completed';
+import UnresolvedOrdersList from './UnresolvedOrdersList';
 import axios from 'axios';
 import PaginationControls from "../../components/Paginationcontrols";
 import { fetch_RBAC_ordermanagement } from '../../services/rbac_service';
@@ -148,7 +148,7 @@ const OrdersDashboard = ({setAuth}) => {
       } catch (err) {
         if (err.response?.status===401|| err.response?.status===403){
           setError("Session expired. Please log in again.");
-          //localStorage.removeItem('sessionId');
+
           
           window.location.href = '/adminlogin'; 
         }else{
@@ -228,7 +228,7 @@ const OrdersDashboard = ({setAuth}) => {
   }
 const shouldShowRightColumn =
   (ADMIN_ROLES_GENERAL?.includes(user?.role) || user?.role === "accounts") &&
-  (Duplicates || CompletedOrdersList);
+  (Duplicates || UnresolvedOrdersList);
 
 return (
   <div
@@ -267,13 +267,13 @@ return (
     {shouldShowRightColumn && (
       <div className="w-full lg:w-1/3 flex flex-col justify-center">
         {Duplicates && (
-          <div className={`${CompletedOrdersList ? 'flex-1' : 'flex justify-center items-center h-full'}`}>
+          <div className={`${UnresolvedOrdersList ? 'flex-1' : 'flex justify-center items-center h-full'}`}>
             <Duplicates orders={orders} onOrderSelect={handleOrderSelect} />
           </div>
         )}
-        {CompletedOrdersList && (
+        {UnresolvedOrdersList && (
           <div className={`${Duplicates ? 'flex-1' : 'flex justify-center items-center h-full mb-10'}`}>
-            <CompletedOrdersList orders={orders} />
+            <UnresolvedOrdersList/>
           </div>
         )}
       </div>

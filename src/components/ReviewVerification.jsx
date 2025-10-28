@@ -15,7 +15,7 @@ export default function ReviewVerification({ onClose, onSubmit, order,statusOpti
     setLoading(true);
 
     try {
-      console.log("orderID and statusoption",orderId,statusOption)
+
       await onSubmit(orderId,statusOption);
      
       onClose();

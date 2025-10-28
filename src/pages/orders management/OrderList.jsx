@@ -751,13 +751,13 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                     id={`order-${order._id}`}
-                    className={`p-4 border rounded-lg z-20 ${selectedOrderId === order._id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                    className={`p-4 border rounded-lg z-20 cursor-pointer hover:border-blue-500`}
                   >
                     <div 
-                      className="p-4 sm:p-6 cursor-pointer"
+                      className="p-4 sm:p-6 cursor-pointe"
                       onClick={() => toggleOrderDetails(order._id)}
                     >
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3">
                             <h3 className="text-lg font-semibold text-gray-800 ">
