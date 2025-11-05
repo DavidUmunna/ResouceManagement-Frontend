@@ -21,7 +21,7 @@
     "framer-motion": "^12.5.0",
     "html-entities": "^2.6.0",
     "jest-extended": "^4.0.2",
-    "lucide-react": "^0.479.0",
+    "lucide-react": "^0.545.0",
     "mermaid": "^11.6.0",
     "nano": "^10.1.4",
     "opossum": "^8.4.0",
