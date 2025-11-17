@@ -56,7 +56,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const [signature, setSignature] = useState(null);
   const [EditingModalId,setEditingModalId]=useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
- 
+  const [loadingDownload, setLoadingDownload]=useState(false)
   const getOverallStatus = (approvals, Department,role) => {
     if (!approvals || approvals.length === 0) return "Pending";
     if (approvals.some(a => a.status === "Rejected")) return "Rejected";
@@ -418,7 +418,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
       setError("");
       setDownloaded(0);
       setTotal(0);
-      setIsLoading(true);
+      setLoadingDownload(true);
       
       const fileData = await downloadFile(fileId,filename, (e) => {
       setDownloaded(e.loaded);
@@ -440,7 +440,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
       }
       setError("Failed to download file");
     } finally {
-      setIsLoading(false);
+      setLoadingDownload(false);
     }
   };
  
@@ -614,13 +614,17 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
         <span className="font-medium text-gray-600">Files:</span>
         {order.filenames?.length > 0 ? (
           order.filenames.map((filename, index) => (
+           
+
             <button
               key={index}
               onClick={(e) => handleFileDownload(order.fileRefs,filename, e)}
               className="flex items-center text-blue-600 hover:text-blue-800"
-            >
+              >
               <FaFilePdf className="mr-1" /> {filename}
             </button>
+           
+            
           ))
         ) : (
           <span className="text-gray-500 flex items-center">
@@ -778,13 +782,19 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                           </div>
                           
                           {order.filenames?.length > 0 && (
-                            <button
-                              onClick={(e) => handleFileDownload(order.filenames[0], e)}
-                              className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
-                              title="Download file"
-                            >
-                              <FiDownload />
-                            </button>
+                            <div className="flex justify-between">
+
+                              <button
+                                onClick={(e) => handleFileDownload(order.fileRefs,order.filenames[0], e)}
+                                className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+                                title="Download file"
+                                >
+                                <FiDownload />
+                              </button>
+                              {loadingDownload &&(<div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                               
+                              )}
+                            </div>
                           )}
 
                           {user.canApprove && (
