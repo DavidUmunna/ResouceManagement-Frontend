@@ -56,7 +56,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const [signature, setSignature] = useState(null);
   const [EditingModalId,setEditingModalId]=useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [loadingDownload, setLoadingDownload]=useState(false)
+  const [loadingDownload, setLoadingDownload]=useState({selectedOrderId:'',status:false})
   const getOverallStatus = (approvals, Department,role) => {
     if (!approvals || approvals.length === 0) return "Pending";
     if (approvals.some(a => a.status === "Rejected")) return "Rejected";
@@ -412,13 +412,21 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     setDropdownOpen(dropdownOpen === orderId ? null : orderId);
   };
  
-   const handleFileDownload = async (fileId,filename) => {
+   const handleFileDownload = async (fileId,filename,OrderId) => {
  
     try {
       setError("");
       setDownloaded(0);
       setTotal(0);
-      setLoadingDownload(true);
+      setLoadingDownload((prev)=>(
+        {
+          ...prev,
+          selectedOrderId:OrderId,
+          status:true
+        }
+        
+      )
+      );
       
       const fileData = await downloadFile(fileId,filename, (e) => {
       setDownloaded(e.loaded);
@@ -440,10 +448,17 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
       }
       setError("Failed to download file");
     } finally {
-      setLoadingDownload(false);
+      setLoadingDownload(prev=>(
+        {
+          ...prev,
+          selectedOrderId:'',
+          status:false
+        }
+      ));
     }
   };
- 
+
+  
 
   
 
@@ -618,7 +633,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
 
             <button
               key={index}
-              onClick={(e) => handleFileDownload(order.fileRefs,filename, e)}
+              onClick={(e) => handleFileDownload(order.fileRefs,filename,order._id)}
               className="flex items-center text-blue-600 hover:text-blue-800"
               >
               <FaFilePdf className="mr-1" /> {filename}
@@ -755,7 +770,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                     id={`order-${order._id}`}
-                    className={`p-4 border rounded-lg z-20 cursor-pointer hover:border-blue-500`}
+                    className={`p-4 border rounded-sm z-20 cursor-pointer hover:border-blue-500`}
                   >
                     <div 
                       className="p-4 sm:p-6 cursor-pointe"
@@ -780,18 +795,18 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                           <div className="flex items-center text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </div>
-                          
+      
                           {order.filenames?.length > 0 && (
                             <div className="flex justify-between">
 
                               <button
-                                onClick={(e) => handleFileDownload(order.fileRefs,order.filenames[0], e)}
+                                onClick={(e) => handleFileDownload(order.fileRefs,order.filenames[0],order._id)}
                                 className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
                                 title="Download file"
                                 >
                                 <FiDownload />
                               </button>
-                              {loadingDownload &&(<div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                              {loadingDownload.selectedOrderId.toString()===String(order._id) &&(<div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                                
                               )}
                             </div>
