@@ -84,7 +84,7 @@ const CreateOrder = () => {
    
 
     files.forEach((file) => {
-      formData.append("files", file);
+      formData.append("file", file);
     });
    
 

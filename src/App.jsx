@@ -15,7 +15,7 @@ import ProtectedLayout from "./ProtectedLayout";
 import ResetPassword from "./pages/ResetPassword";
 import CompanyDataForm from "./pages/landinpage/CompanyData";
 import { ToastContainer } from 'react-toastify';
-
+import SubscriptionPage from "./pages/landinpage/Subscription";
 // Pagetransition animation
 
 const App = () => {
@@ -98,6 +98,7 @@ const App = () => {
                 <Route index element={<Landingpage/>}/>
                 <Route path="/aboutus" element={<Aboutus/>}/>
                 <Route path="/companydata" element={<CompanyDataForm/>}/>
+                <Route path="/subscription" element={<SubscriptionPage/>}/>
               </Route>
               <Route
                 path="/adminlogin"

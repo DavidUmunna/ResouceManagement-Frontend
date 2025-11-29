@@ -10,6 +10,7 @@ import OrdersDashboard from "./pages/orders management/Ordersmanagement";
 import InventoryLogs from "./pages/inventorymanagement/inventory_logs/index";
 import ScheduleEditor from './pages/SchedulingComponents/ScheduleEditor'
 import AppLayout from "./components/AppLayout"
+import FileTracking from "./pages/FileTracking";
 
 // lazy loaded components
 const  DepartmentAssignment= React.lazy(()=>import("./pages/Department_assignment")) 
@@ -63,6 +64,16 @@ const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
                               <Navigate to="/adminlogin" />
                             )
                         }
+                      />
+                      <Route
+                      path="filetracking"
+                      element={
+                        isauthenticated?(
+                          <FileTracking/>
+                        ):(
+                          <Navigate to="/adminlogin" />
+                        )
+                      }
                       />
                       <Route
                         path="inventorymanagement"

@@ -70,7 +70,7 @@ export const createOrder = async ({ formData, orderData }) => {
     
     // STEP 1: Upload files if present
   
-    if (formData && formData.has("files")) {
+    if (formData && formData.has("file")) {
       const fileResponse = await axios.post(`${API_URL}/fileupload/create`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",

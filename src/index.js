@@ -12,6 +12,10 @@ import { UserProvider } from "./components/usercontext";
 import { ErrorBoundary } from 'react-error-boundary';
 import Fallback from "./components/errorboundary";
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { registerServiceWorker } from './firebaseConfig'; 
+
+registerServiceWorker().catch(console.error)
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,7 +52,5 @@ root.render(
   
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// measuring performance in your app
 reportWebVitals();

@@ -11,8 +11,7 @@ import Sidebar from './Sidebar';
 import {fetch_RBAC} from "../services/rbac_service"
 import * as Sentry from "@sentry/react"
 import {FiFileText} from "react-icons/fi"
-
-
+import { EnableNotifications } from '../firebaseConfig';
 const navigation = [
   { name: 'Requests', to: '/admin/requestlist', icon: ClipboardDocumentListIcon , hiddenFor:['Visitor']},
   { name: 'Create Request', to: '/admin/createorder', icon: PlusCircleIcon, hiddenFor:['Visitor'] },
@@ -20,7 +19,7 @@ const navigation = [
   { name:'Tasks', to:'/admin/usertasks', icon: ClipboardDocumentCheckIcon, hiddenFor:['Visitor']},
   { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["Visitor"] },
   {name:'Schedule Manager', to:'/admin/schedulemanager', icon: CalendarClock ,visibleTo:['Accountant',"Financial_manager"] },
-
+  
 ];
 
 const userNavigation = [
@@ -39,6 +38,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const sidebarRef=useRef(null);
   const [ADMIN_ROLES_GENERAL,set_ADMIN_ROLES_GENERAL]=useState([])
+  
 
 
   //const [isMobileMenuOpen,setIsMobileMenuOpen]=useState(true)
@@ -130,6 +130,9 @@ export default function Navbar() {
                       type="button"
                       className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none"
                       aria-label="Notifications"
+                      onClick={()=>{
+                        alert("Notifications Activated")
+                        EnableNotifications()}}
                     >
                       <BellIcon className="h-6 w-6" aria-hidden="true" />
                     </button>

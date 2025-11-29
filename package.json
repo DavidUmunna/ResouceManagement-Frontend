@@ -18,6 +18,7 @@
     "cypress": "^14.3.2",
     "date-fns": "^4.1.0",
     "electron": "^38.1.2",
+    "firebase": "^12.6.0",
     "framer-motion": "^12.5.0",
     "html-entities": "^2.6.0",
     "jest-extended": "^4.0.2",
@@ -61,7 +62,8 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d  build"
+    "deploy": "gh-pages -d  build",
+    "docs": "jsdoc ./src"
   },
   "eslintConfig": {
     "extends": [
@@ -102,6 +104,7 @@
     "http-proxy-middleware": "^3.0.5",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^27.5.1",
+    "jsdoc": "^4.0.5",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.3",
     "querystring-es3": "^0.2.1",
