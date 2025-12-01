@@ -13,25 +13,27 @@ const ComplianceLog = ({ serviceInstance }) => {
   const service = useMemo(() => serviceInstance || complianceLogService, [serviceInstance]);
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(5);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState(DEFAULT_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [totalPages,setTotalPages]=useState(5)
   useEffect(() => {
     loadLogs(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  const loadLogs = async (nextPage = 1) => {
+  const loadLogs = async (nextPage) => {
     try {
       setLoading(true);
       setError("");
       const response = await service.fetchLogs({ page: nextPage, limit });
       const entries = response?.data || response?.logs || [];
       setLogs(entries);
-      setTotal(response?.Pagination?.total || entries.length);
+      setTotal(response?.pagination?.total || entries.length);
+      setTotalPages(response?.pagination?.totalPages)
+      console.log("backend response",response)
       setSummary(buildSummary(entries));
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load compliance logs.");
@@ -42,7 +44,7 @@ const ComplianceLog = ({ serviceInstance }) => {
       setLoading(false);
     }
   };
-
+ 
   const buildSummary = (entries = []) =>
     entries.reduce(
       (acc, entry) => {
@@ -71,7 +73,7 @@ const ComplianceLog = ({ serviceInstance }) => {
     return "text-gray-700 bg-gray-100";
   };
 
-  const totalPages = Math.max(Math.ceil((total || logs.length) / limit), 1);
+  //const totalPages = Math.max(Math.ceil((total || logs.length) / limit), 1);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 h-full">
@@ -203,6 +205,7 @@ const ComplianceLog = ({ serviceInstance }) => {
       </div>
     </div>
   );
+  {console.log(totalPages)}
 };
 
 const StatCard = ({ icon, label, value }) => (

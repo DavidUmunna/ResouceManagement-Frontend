@@ -13,7 +13,7 @@ const FileTracking=()=>{
              total: 0
             }
     });
-    const [Loading,setLoading]=useState(false)
+    const [Loading,setLoading]=useState(true)
     const [FileTracks, setFileTracks]=useState([])
     const [Error, setError] = useState("");
     const [dateRange, setDateRange] = useState({
@@ -50,7 +50,7 @@ const FileTracking=()=>{
               endDate: endDate
             };
 
-            const [trackRes,StatusRes]=await  Promise.all([
+            const trackRes=await  
                 axios.get(`${API_URL}/filetrack/paginatedtracks`,{
              params,
              headers: {
@@ -59,10 +59,10 @@ const FileTracking=()=>{
           },
           withCredentials: true,
           })
-        ])
+        
         setData({
-            Tracks:trackRes.data.data,
-            pagination:trackRes.data.Pagination
+            Tracks:trackRes?.data?.data,
+            pagination:trackRes?.data?.Pagination
         })
         setFileTracks(trackRes.data.data||[])
 
@@ -81,7 +81,7 @@ const FileTracking=()=>{
 
 
         }finally{
-            setLoading(false)
+            setLoading(true)
         }
     }
     const handlePageChange = (newPage) => {
@@ -123,6 +123,10 @@ const FileTracking=()=>{
                 {Error}
               </div>
             )}
+            {Loading&&(
+               <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-blue-500" />
+            )}
+            
         </div>
         </>
 

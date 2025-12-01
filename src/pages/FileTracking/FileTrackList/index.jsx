@@ -6,7 +6,6 @@ import * as Sentry from '@sentry/react'
 import { toast } from "react-toastify";
 import AddTrack from "../AddTrack";
 import { useUser } from "../../../components/usercontext";
-import { resolve } from "path-browserify";
 const FileTrackList=({
   fetchData,
   dateRange,
@@ -88,7 +87,7 @@ const FileTrackList=({
         fetchData(undefined,undefined,start,end)
       }
     };
-    console.log("file form",fileFormData)
+ 
 
     const setupEdit=(item)=>{
         setEditingItem(item)
