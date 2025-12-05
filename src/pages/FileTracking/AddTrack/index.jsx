@@ -19,7 +19,7 @@ const AddTrack=({handleSubmit,handleUpdate, editingItem,setEditingItem,formData,
     fileFormData.append("file",file)
   })
 
-  console.log("current file",fileFormData)
+
   return(
         <>
            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

@@ -109,7 +109,7 @@ const PaginationControls = ({
             disabled={isLoading}
             className="border rounded-md px-2 py-1 text-sm"
           >
-            {[10, 20, 50,100,500,1000].map((size) => (
+            {[10, 20, 50,100,500,1000,1500,3000].map((size) => (
               <option key={size} value={size}>
                 {size}
               </option>

@@ -33,7 +33,7 @@ const ComplianceLog = ({ serviceInstance }) => {
       setLogs(entries);
       setTotal(response?.pagination?.total || entries.length);
       setTotalPages(response?.pagination?.totalPages)
-      console.log("backend response",response)
+      
       setSummary(buildSummary(entries));
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load compliance logs.");
@@ -205,7 +205,7 @@ const ComplianceLog = ({ serviceInstance }) => {
       </div>
     </div>
   );
-  {console.log(totalPages)}
+ 
 };
 
 const StatCard = ({ icon, label, value }) => (
