@@ -75,10 +75,14 @@ const SkipsManagement = () => {
   };
 
   // Fetch skips data with date range
-  const fetchData = async (page = data.pagination?.page,
-    limit = data.pagination?.limit ,
-    startDate=formatDate(dateRange.startDate),
-    endDate=formatDate(dateRange.endDate)) => {
+  const fetchData = async (
+    page = data.pagination?.page,
+    limit = data.pagination?.limit,
+    startDate = formatDate(dateRange.startDate),
+    endDate = formatDate(dateRange.endDate),
+    search = "",
+    WasteStream = ""
+  ) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('sessionId');
@@ -90,6 +94,9 @@ const SkipsManagement = () => {
         startDate: startDate,
         endDate: endDate
       };
+      if (search) params.searchTerm = search;
+      if (search) params.WasteSource = search;
+      if (WasteStream) params.WasteStream = WasteStream;
 
       const [skipsRes, statsRes, categoriesRes] = await Promise.all([
         axios.get(`${API_URL}/skiptrack`, {
@@ -101,10 +108,7 @@ const SkipsManagement = () => {
           withCredentials: true,
         }),
         axios.get(`${API_URL}/skiptrack/stats`, {
-          params: {
-            startDate: formatDate(dateRange.startDate),
-            endDate: formatDate(dateRange.endDate)
-          },
+          params:params,
           headers: {
             Authorization: `Bearer ${token}`,
             "ngrok-skip-browser-warning": "true",
@@ -156,7 +160,7 @@ const SkipsManagement = () => {
       endDate: end 
     });
     if (start && end){
-      fetchData(undefined,undefined,start,end)
+      triggerFilteredFetch(formatDate(start), formatDate(end));
     }
   };
 
@@ -183,6 +187,17 @@ const SkipsManagement = () => {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const triggerFilteredFetch = (
+    start = formatDate(dateRange.startDate),
+    end = formatDate(dateRange.endDate),
+    page = 1,
+    limit = data.pagination?.limit
+  ) => {
+    const search = searchTerm.trim();
+    const wasteStream = selectedWasteStream !== 'All' ? selectedWasteStream : "";
+    fetchData(page, limit, start, end, search.length > 3 ? search : "", wasteStream);
   };
   
   // Filter and sort
@@ -237,11 +252,15 @@ const SkipsManagement = () => {
 
 
   const handlePageChange = (newPage) => {
-    fetchData(newPage, data.pagination?.limit);
+    const search = searchTerm.trim();
+    const wasteStream = selectedWasteStream !== 'All' ? selectedWasteStream : "";
+    fetchData(newPage, data.pagination?.limit, undefined, undefined, search.length > 3 ? search : "", wasteStream);
   };
 
   const handleItemsPerPageChange = (newLimit) => {
-    fetchData(1, newLimit);
+    const search = searchTerm.trim();
+    const wasteStream = selectedWasteStream !== 'All' ? selectedWasteStream : "";
+    fetchData(1, newLimit, undefined, undefined, search.length > 3 ? search : "", wasteStream);
   };
 
   const handleSubmit = async (e) => {
@@ -412,6 +431,7 @@ const SkipsManagement = () => {
       startDate: today,
       endDate: today
     });
+    triggerFilteredFetch(formatDate(today), formatDate(today));
   };
 
   const setThisWeekRange = () => {
@@ -421,6 +441,7 @@ const SkipsManagement = () => {
       startDate: firstDay,
       endDate: new Date()
     });
+    triggerFilteredFetch(formatDate(firstDay), formatDate(new Date()));
   };
 
   const setThisMonthRange = () => {
@@ -429,6 +450,7 @@ const SkipsManagement = () => {
       startDate: new Date(today.getFullYear(), today.getMonth(), 1),
       endDate: new Date()
     });
+    triggerFilteredFetch(formatDate(new Date(today.getFullYear(), today.getMonth(), 1)), formatDate(new Date()));
   };
 
   const setLastMonthRange = () => {
@@ -437,6 +459,7 @@ const SkipsManagement = () => {
       startDate: new Date(today.getFullYear(), today.getMonth() - 1, 1),
       endDate: new Date(today.getFullYear(), today.getMonth(), 0)
     });
+    triggerFilteredFetch(formatDate(new Date(today.getFullYear(), today.getMonth() - 1, 1)), formatDate(new Date(today.getFullYear(), today.getMonth(), 0)));
   };
 
 
@@ -461,7 +484,15 @@ const SkipsManagement = () => {
               placeholder="Search..."
               className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
+                const trimmed = value.trim();
+                const wasteStream = selectedWasteStream !== 'All' ? selectedWasteStream : "";
+                if (trimmed.length === 0 || trimmed.length > 3) {
+                  fetchData(1, data.pagination?.limit, undefined, undefined, trimmed.length > 3 ? trimmed : "", wasteStream);
+                }
+              }}
             />
           </div>
           
@@ -469,7 +500,13 @@ const SkipsManagement = () => {
           <select
             className="flex-1 xs:flex-initial xs:w-40 sm:w-48 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm sm:text-base"
             value={selectedWasteStream}
-            onChange={(e) => setselectedWasteStream(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setselectedWasteStream(value);
+              const search = searchTerm.trim();
+              const wasteStream = value !== 'All' ? value : "";
+              fetchData(1, data.pagination?.limit, undefined, undefined, search.length > 3 ? search : "", wasteStream);
+            }}
           >
             <option value="All">All Categories</option>
             {Array.isArray(categories) && categories.map((category,index) => (

@@ -11,6 +11,7 @@ const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem
               <thead className="bg-gray-50">
                 <tr>
                   {/* Define fixed widths for each column via w- classes */}
+                  <th className="w-1/12 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">S/N</th>
                   <th className="w-1/12 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Actions</th>
                   <th
                     onClick={() => requestSort('skip_id')}
@@ -83,9 +84,10 @@ const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem
                 ) :
         
                   (
-                    filteredItems.map((item) => (
+                    filteredItems.map((item,index) => (
                       <React.Fragment key={item._id}>
                     <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">{index}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button onClick={() => setupEdit(item)} className="text-blue-600 hover:text-blue-900">
                             <FiEdit2 />
