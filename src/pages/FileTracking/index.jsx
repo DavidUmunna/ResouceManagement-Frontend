@@ -13,7 +13,7 @@ const FileTracking=()=>{
              total: 0
             }
     });
-    const [Loading,setLoading]=useState(true)
+    const [Loading,setLoading]=useState(false)
     const [FileTracks, setFileTracks]=useState([])
     const [Error, setError] = useState("");
     const [dateRange, setDateRange] = useState({
@@ -81,7 +81,7 @@ const FileTracking=()=>{
 
 
         }finally{
-            setLoading(true)
+            setLoading(false)
         }
     }
     const handlePageChange = (newPage) => {

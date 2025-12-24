@@ -11,6 +11,8 @@ import InventoryLogs from "./pages/inventorymanagement/inventory_logs/index";
 import ScheduleEditor from './pages/SchedulingComponents/ScheduleEditor'
 import AppLayout from "./components/AppLayout"
 import FileTracking from "./pages/FileTracking";
+import AiToolsPage from "./pages/FileTracking/Dashboard/AiToolsPage";
+import TendersPage from "./pages/Tenders";
 
 // lazy loaded components
 const  DepartmentAssignment= React.lazy(()=>import("./pages/Department_assignment")) 
@@ -74,6 +76,26 @@ const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
                           <Navigate to="/adminlogin" />
                         )
                       }
+                      />
+                      <Route
+                        path="ai-tools"
+                        element={
+                          isauthenticated ? (
+                            <AiToolsPage />
+                          ) : (
+                            <Navigate to="/adminlogin" />
+                          )
+                        }
+                      />
+                      <Route
+                        path="tenders"
+                        element={
+                          isauthenticated ? (
+                            <TendersPage />
+                          ) : (
+                            <Navigate to="/adminlogin" />
+                          )
+                        }
                       />
                       <Route
                         path="inventorymanagement"
