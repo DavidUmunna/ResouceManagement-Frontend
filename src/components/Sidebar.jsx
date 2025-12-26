@@ -16,7 +16,7 @@ const Sidebar=forwardRef(({ isOpen, onClose },ref) =>{
     { name:"Tenders" ,to:"/admin/tenders", icon:Briefcase, visibleTo:["global_admin"]},
     { name:"File Tracking", to:"/admin/filetracking",icon:FileSearch, visibleTo:["Contracts_manager","global_admin"]},
     { name:"AI Tools", to:"/admin/ai-tools", icon:Brain, visibleTo:["global_admin"]},
-    { name: "Department Assignment", to: "/admin/departmentassignment", icon: Building2,visibleTo:["human_resources","global_admin","Waste Management Manager","Financial_manager"] },
+    { name: "Department Assignment", to: "/admin/departmentassignment", icon: Building2,visibleTo:["global_admin"] },
     { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["global_admin","Waste Management Manager","Waste Management Supervisor","Logistics Manager"] },
     { name: "App Monitoring", to: "/admin/monitoring", icon: Activity,visibleTo:["global_admin"] },
 
