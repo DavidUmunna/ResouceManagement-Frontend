@@ -13,6 +13,7 @@ import SkipsToast from './skipsToast';
 import AddSkip from './AddSkip';
 import SkipsTable from './SkipsTable';
 import SkipSummaryCard from './SkipSummaryCard';
+import LoadingModal from '../inventorymanagement/Loading_modal';
 
 
 const SkipsManagement = () => {
@@ -64,6 +65,7 @@ const SkipsManagement = () => {
   const [selectedWasteStream, setselectedWasteStream] = useState('All');
   const [sortConfig, setSortConfig] = useState({ key: 'lastUpdated', direction: 'desc' });
   const [loading, setLoading] = useState(false);
+  const [limitLoading, setLimitLoading] = useState(false);
   const [stats, setStats] = useState({});
   const [Error, setError] = useState("");
 
@@ -144,6 +146,7 @@ const SkipsManagement = () => {
       }
     } finally {
       setLoading(false);
+      setLimitLoading(false);
     }
   };
 
@@ -260,6 +263,10 @@ const SkipsManagement = () => {
   const handleItemsPerPageChange = (newLimit) => {
     const search = searchTerm.trim();
     const wasteStream = selectedWasteStream !== 'All' ? selectedWasteStream : "";
+    if (newLimit === data.pagination?.limit) {
+      return;
+    }
+    setLimitLoading(true);
     fetchData(1, newLimit, undefined, undefined, search.length > 3 ? search : "", wasteStream);
   };
 
@@ -649,6 +656,7 @@ const SkipsManagement = () => {
         </div>
       )}
       {toast && (<SkipsToast toast={toast} setToast={setToast}/>)}
+      {limitLoading && (<LoadingModal />)}
     </div>
   );
 };
