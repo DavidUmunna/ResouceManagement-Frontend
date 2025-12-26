@@ -263,6 +263,7 @@ const ExcelExport = ({ setopenmodal, categories, setIsLoading, IsLoading }) => {
                                 name="WasteSource"
                                 value={formData.WasteSource}
                                 onChange={handleInputChange}
+                                placeholder="If None, enter 'all' "
                                 className="w-full p-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                 required
                             />
