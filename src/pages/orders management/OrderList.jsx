@@ -760,7 +760,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           ) : displayedOrders.length === 0 ? (
             renderEmptyState()
           ) : (
-            <motion.ul className="divide-y divide-gray-200 max-h-screen overflow-y-auto ">
+            <motion.ul className="max-h-screen overflow-y-auto space-y-3 p-2 sm:p-3">
               <AnimatePresence>
                 {displayedOrders.map((order) => (
                   <motion.li
@@ -770,7 +770,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                     id={`order-${order._id}`}
-                    className={`p-4 border rounded-sm z-20 cursor-pointer hover:border-blue-500`}
+                    className={`relative p-4 border border-gray-200 bg-white rounded-md cursor-pointer transition hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md hover:z-10`}
                   >
                     <div 
                       className="p-4 sm:p-6 cursor-pointe"

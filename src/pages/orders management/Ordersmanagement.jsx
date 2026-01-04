@@ -265,7 +265,7 @@ return (
     </div>
 
     {shouldShowRightColumn && (
-      <div className="w-full lg:w-1/3 flex flex-col justify-center">
+      <div className="hidden lg:flex w-full lg:w-1/3  flex-col justify-center">
         {Duplicates && (
           <div className={`${UnresolvedOrdersList ? 'flex-1' : 'flex justify-center items-center h-full'}`}>
             <Duplicates orders={orders} onOrderSelect={handleOrderSelect} />

@@ -12,9 +12,10 @@ const SkipsDashboard = ({ setAuth }) => {
         </div>
         
         {/* MovingAverageChart - Takes 1/3 of width on large screens, full width on mobile */}
-        <div className="w-full lg:w-1/3 mt-11  ">
-          <MovingAverageChart  />
-        </div>
+      <div className="hidden lg:block w-full lg:w-1/3 mt-11">
+          <MovingAverageChart />
+      </div>
+
       </div>
     </div>
   );

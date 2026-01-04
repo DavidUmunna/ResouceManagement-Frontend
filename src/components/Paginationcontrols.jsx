@@ -102,7 +102,7 @@ const PaginationControls = ({
         </div>
         
         <div className="flex items-center gap-2 ">
-          <span className="text-sm md:hidden">Items per page:</span>
+          <span className="text-sm hidden lg:block">Items per page:</span>
           <select
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}

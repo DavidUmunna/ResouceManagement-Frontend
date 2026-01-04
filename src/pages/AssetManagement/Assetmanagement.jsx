@@ -295,7 +295,7 @@ const AssetManagement = ({setAuth}) => {
   //if (loading) return <div className="text-center py-8">Loading Assets...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 rounded-lg shadow-sm mt-12">
+    <div className="w-full p-6 bg-gray-50 rounded-lg shadow-sm mt-12">
       {/* Header and Controls */}
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Asset Management</h1>
       
@@ -330,11 +330,11 @@ const AssetManagement = ({setAuth}) => {
               )}
             </select>
         </div>
-        <div className="flex flex-wrap justify-between">
+        <div className="w-full flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center lg:w-auto">
 
         <button
                  onClick={() => setshowmodal(!showmodal)}
-                className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105 mr-2 m-1"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105"
                  >
                    Excel Export 
         </button>
@@ -344,7 +344,7 @@ const AssetManagement = ({setAuth}) => {
             resetForm();
             setShowForm(true);
           }}
-          className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105 m-1"
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 transform hover:scale-105"
           >
           <FiPlus className="mr-2" />
           Add Asset Item
@@ -523,11 +523,13 @@ const AssetManagement = ({setAuth}) => {
         </div>
       </div>)}
 
-      {/* Assets Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="flex-1 min-w-0">
+          {/* Assets Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     {/* Table headers */}
@@ -629,30 +631,30 @@ const AssetManagement = ({setAuth}) => {
                 isLoading={loading}
               />
             </div>
+        </div>
 
-      {/* Analytics */}
-      <div className='items-center flex justify-center mb-7'>
-
-        {ADMIN_ROLES_ASSET_MANAGEMENT.includes(user.role)&&(<div className=" mt-8 flex flex-wrap px-4 md:flex-nowrap   max-w-full">
-          <div className="h-50 mt-20 p-7 md:h-60 flex items-center justify-center bg-gray-50 rounded">
-            <Assetsanalysis AssetItems={AssetItems} />
-          </div>
-          
-          <div className="bg-white h-50  mt-25 rounded-lg  bordermt-10 border-gray-200">
-            
-            <div className="grid grid-cols-1 lg:grid-cols-1">
-              <AssetsConditionChart AssetItems={AssetItems} />
+        {/* Analytics */}
+        {ADMIN_ROLES_ASSET_MANAGEMENT.includes(user.role) && (
+          <div className=" hidden lg:block lg:w-1/3 lg:w-[250px] flex-shrink-0">
+            <div className="flex flex-col gap-4">
+              <div className="  flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+                <Assetsanalysis AssetItems={AssetItems} />
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 ">
+                <AssetsConditionChart AssetItems={AssetItems} />
+              </div>
             </div>
           </div>
-        </div>)}
-        {Error}
-        {showmodal && (
-           <AssetExportModal 
-             onClose={() => setshowmodal(false)} 
-             setLoading={setLoading}
-           />
-         )}
+        )}
       </div>
+
+      {Error}
+      {showmodal && (
+        <AssetExportModal 
+          onClose={() => setshowmodal(false)} 
+          setLoading={setLoading}
+        />
+      )}
     </div>
   );
 };

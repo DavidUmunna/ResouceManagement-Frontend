@@ -14,12 +14,14 @@ const InventoryAnalytics = ({ AssetItems }) => {
 
   // Color palette for the chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+  const LABEL_FONT_SIZE = 10;
+  const LABEL_SHIFT_X = -40;
 
   return (
-    <div className="max-w-6xl mx-auto mb-5 px-4 sm:px-6">
+    <div className="w-full mb-0">
       <div className="grid grid-cols-1">
         {/* Category Distribution Pie Chart */}
-        <div className="bg-white p-9 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white w-full p-2 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-medium text-gray-800 mb-4">Assets by Category</h3>
     
           <div className="h-64 sm:h-72 md:h-70 w-full">
@@ -34,7 +36,23 @@ const InventoryAnalytics = ({ AssetItems }) => {
                   fill="#8884d8"
                   dataKey="itemCount"
                   nameKey="name"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius }) => {
+                    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                    const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180) + LABEL_SHIFT_X;
+                    const y = cy + radius * Math.sin((-midAngle * Math.PI) / 180);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#374151"
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        fontSize={LABEL_FONT_SIZE}
+                      >
+                        {`${name} ${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
                 >
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

@@ -5,10 +5,10 @@ const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem
         <>
 
               {/* Skip Table */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden  max-h-96 overflow-y-auto">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 table-fixed">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
                   {/* Define fixed widths for each column via w- classes */}
                   <th className="w-1/12 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">S/N</th>

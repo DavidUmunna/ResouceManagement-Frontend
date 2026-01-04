@@ -9,14 +9,14 @@ import { fetch_RBAC_department } from '../services/rbac_service';
 import * as Sentry from "@sentry/react"
 import { isProd } from '../components/env';
 
-const DepartmentManagement = (setAuth) => {
+const DepartmentManagement = ({ setAuth }) => {
   // State
   const {user}=useUser()
   const currentuser=user
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
@@ -72,7 +72,7 @@ const DepartmentManagement = (setAuth) => {
         setDepartments(deptRes.status === 'fulfilled' ? deptRes.value.data.data : []);
         setUsers(usersRes.status === 'fulfilled' ? usersRes.value.data.data : []);
         setTasks(tasksRes.status === 'fulfilled' ? tasksRes.value.data.data : []);
-        setStats(statsRes.status === 'fulfilled' ? statsRes.value.data.data: {});
+        setStats(statsRes.status === 'fulfilled' ? (statsRes.value.data.data || []) : []);
       } catch (err) {
         if (err.response?.status===401|| err.response?.status===403){
         setError("Session expired. Please log in again.");
@@ -331,7 +331,7 @@ const refreshDepartments = () => {
   };
   const visibleDepartments = filteredDepartments.filter(dept => {
     const isGlobalAccess = ADMIN_ROLES.includes(user.role);
-    const isDepartmentHead = String(dept.headOfDepartment.user._id) === String(user.userId);
+    const isDepartmentHead = String(dept.headOfDepartment?.user?._id) === String(user.userId);
    
     return isGlobalAccess || isDepartmentHead;
   })
@@ -372,7 +372,7 @@ const refreshDepartments = () => {
       <h3 className="font-bold text-lg mb-3 flex items-center">
         <FiBarChart2 className="mr-2" /> Department Statistics
       </h3>
-      {
+      {Array.isArray(stats) &&
         stats.map((stat)=>(
           
           <div className="grid grid-cols-2 gap-4" key={stat._id}>
@@ -404,7 +404,7 @@ const refreshDepartments = () => {
     <div className="mt-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium text-gray-700">Department Tasks</h3>
-        {(department.headOfDepartment?.user._id === user.userId || ADMIN_ROLES.includes(user.role)) && (
+        {(String(department.headOfDepartment?.user?._id) === String(user.userId) || ADMIN_ROLES.includes(user.role)) && (
           <button
             onClick={() => openModal('assignTask', department)}
             className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded flex items-center"
@@ -413,11 +413,11 @@ const refreshDepartments = () => {
           </button>
         )}
       </div>
-      {tasks.filter(t => t.department?._id === department._id || t.department === department._id).length === 0 ? (
+      {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).length === 0 ? (
         <p className="text-gray-500 text-sm italic">No tasks assigned</p>
       ) : (
         <div className="space-y-2">
-          {tasks.filter(t => t.department._id === department._id).map(task => (
+          {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).map(task => (
             <div key={task._id} className="p-3 bg-white rounded border border-gray-200">
 
                <div className='flex '>
@@ -435,7 +435,7 @@ const refreshDepartments = () => {
                   <p className="text-sm text-gray-500">{task.description}</p>
                 </div>
                 <span className="text-xs bg-green-100 text-green-800 px-2 py-2 rounded-full">
-                    Assigned to: {department.users.find(u => String(u._id) === String(task.assignedTo._id))?.name || 'Unassigned'}
+                  Assigned to: {department.users.find(u => String(u._id) === String(task.assignedTo?._id || task.assignedTo))?.name || 'Unassigned'}
                 </span>
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500">
@@ -464,7 +464,7 @@ const refreshDepartments = () => {
         </button>
       </div>
       <div className="space-y-2">
-        {department.users.map(user => (
+        {(department.users || []).map(user => (
           
           <div key={user._id} className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
             <div className="flex items-center">

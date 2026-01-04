@@ -60,28 +60,28 @@ const Searchbar = () => {
   };
 
   return (
-    <div className="px-4 sm:px-6 md:px-8 max-w-screen-lg mx-auto w-full">
+    <div className="px-2 sm:px-4 md:px-6 max-w-screen-lg mx-auto w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="bg-white shadow-md rounded-xl p-2 sm:p-6 space-y-4 mt-4"
+        className="bg-white shadow-sm border border-gray-100 rounded-lg p-2.5 sm:p-4 space-y-2 sm:space-y-3 mt-2 sm:mt-3"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
          
           {hasActiveFilters() && (
             <button
               onClick={handleClear}
-              className="text-red-500 text-sm hover:underline flex items-center gap-1"
+              className="text-red-500 text-xs hover:underline flex items-center gap-1"
             >
               <FiX size={14} /> Clear
             </button>
           )}
         </div>
 
-        <div className="flex flex-col md:flex-row gap-2">
+        <div className="flex flex-col md:flex-row gap-1.5 sm:gap-2">
           <select
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 w-full md:w-auto"
+            className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 w-full md:w-auto"
             value={searchMode}
             onChange={(e) => setSearchMode(e.target.value)}
           >
@@ -93,7 +93,7 @@ const Searchbar = () => {
           {searchMode === 'keyword' && (
             <input
               placeholder="Search..."
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 w-full"
+              className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 w-full"
               value={search.keyword}
               onChange={(e) => dispatch(setKeyword(e.target.value))}
             />
@@ -103,14 +103,14 @@ const Searchbar = () => {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={handleSearch}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-1 w-full md:w-auto"
+            className="bg-blue-600 text-white px-2.5 py-1 rounded-md text-xs sm:text-sm font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-1 w-full md:w-auto"
           >
             <FiSearch size={16} />
             {!isMobile && 'Search'}
           </motion.button>
           {export_departments.includes(user.Department)&&<button
                  onClick={() => setshowmodal(!showmodal)}
-                 className="h-11 w-full justify-center sm:w-auto px-4 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                 className="h-8 sm:h-9 w-full justify-center sm:w-auto px-2.5 sm:px-3 bg-green-600 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
                  >
                   <FaFileExport className='mr-2'/>   Export 
           </button>
@@ -122,7 +122,7 @@ const Searchbar = () => {
           <div className="space-y-3 pt-2">
             {searchMode === 'status' && (
               <select
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
                 value={search.status}
                 onChange={(e) => dispatch(setStatus(e.target.value))}
               >
@@ -140,14 +140,14 @@ const Searchbar = () => {
                 <input
                   type="date"
                   name="start"
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
                   value={search.dateRange.start ?? ''}
                   onChange={handleDateRangeChange}
                 />
                 <input
                   type="date"
                   name="end"
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
                   value={search.dateRange.end ?? ''}
                   onChange={handleDateRangeChange}
                 />

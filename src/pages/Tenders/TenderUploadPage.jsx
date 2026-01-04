@@ -55,7 +55,7 @@ const TenderUploadPage = () => {
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Deadlines</h3>
           {extracted?.deadlines?.length ? (
             <ul className="text-sm text-gray-700 space-y-1">
-              {extracted.deadlines.map((d, idx) => (
+              {extracted?.deadlines.map((d, idx) => (
                 <li key={idx} className="flex justify-between">
                   <span>{d.label || "Deadline"}</span>
                   <span className="font-medium">{d.date || "—"}</span>
@@ -71,7 +71,7 @@ const TenderUploadPage = () => {
           <h3 className="text-sm font-semibold text-gray-800 mb-2">Requirements</h3>
           {extracted?.requirements?.length ? (
             <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-              {extracted.requirements.map((req, idx) => (
+              {extracted?.requirements.map((req, idx) => (
                 <li key={idx}>{req}</li>
               ))}
             </ul>
