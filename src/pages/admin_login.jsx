@@ -1,10 +1,13 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import AdminImg from "../components/assets/admin.png"
+import AdminImg from "../components/assets/haldenlogo_copy.png"
 import { useUser } from "../components/usercontext";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {Link} from "react-router-dom"
+//import { getCookie } from "../components/Helpers";
+import * as Sentry from "@sentry/react"
+import { isProd } from "../components/env";
 export default function Sign_in({ setAuth }) {
   const navigate = useNavigate();
   const { setUser } = useUser();
@@ -17,27 +20,28 @@ export default function Sign_in({ setAuth }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-
+    
+    setLoading(true);
     try {
       const API_URL = process.env.REACT_APP_API_URL;
-      const response = await axios.post(
-        `${API_URL}/api/admin-user/login`,
-        { username, password },
-        { withCredentials: true,"ngrok-skip-browser-warning": "true"
+     const response = await axios.post(
+  `${API_URL}/api/admin-user/login`,
+  { username, password },
+  {withCredentials: true
+    }
+     );
 
-         }
-      );
 
-      if (response.data.success) {
+    if (response.data.success===true) {
         setAuth(true);
-        localStorage.setItem("authToken",response.data.token)
+
+
         //localStorage.setItem("auth", "true");
         setUser(response.data.user);
         //console.log(response.data.user)
         
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
         //console.log(userData)
       } else {
         setError(response.data.message);
@@ -45,7 +49,9 @@ export default function Sign_in({ setAuth }) {
     } catch (error) {
       if (error.response) {
         setError(error.response.data.message || "Login failed.");
+         if (isProd) Sentry.captureException(error)
       } else if (error.request) {
+        //console.log(error.request)
         setError("Server is unreachable. Please check your connection.");
       } else {
         setError("An error occurred. Please try again.");
@@ -76,11 +82,11 @@ export default function Sign_in({ setAuth }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             loading="eager"
-            fetchPriority="high"
-            className="mx-auto h-10 w-auto"
+            fetchpriority="high"
+            className="mx-auto h-14 w-14 "
           />
           <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-              Sign in to account
+              Sign in to Your Account
           </h2>
         </div>
 
@@ -153,14 +159,14 @@ export default function Sign_in({ setAuth }) {
               </motion.button>
               <AnimatePresence>
                 {error && (
-                  <motion.p
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="text-red-500 text-sm mt-2"
+                   className="p-3 mt-5 flex  justify-center items-center  text-red-600 border-l-4 border-red-500 bg-red-200"
                   >
                     {error}
-                  </motion.p>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
@@ -170,7 +176,7 @@ export default function Sign_in({ setAuth }) {
             <p className="text-center text-sm text-gray-500">
               Can't sign in?{" "}
               <span
-                onClick={() => setIsVisible(true)}
+                onClick={() => setIsVisible(!isVisible)}
                 className="font-bold text-blue-700 cursor-pointer hover:underline"
               >
                 Contact IT Team

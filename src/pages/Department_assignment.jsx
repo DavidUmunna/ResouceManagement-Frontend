@@ -5,23 +5,23 @@ import {
 } from 'react-icons/fi';
 import axios from 'axios';
 import { useUser } from '../components/usercontext';
-  
+import { fetch_RBAC_department } from '../services/rbac_service';
+import * as Sentry from "@sentry/react"
+import { isProd } from '../components/env';
 
-const global_ADMIN_ROLES=["admin","global_admin","human_resources"]
-const DepartmentManagement = (setAuth) => {
+const DepartmentManagement = ({ setAuth }) => {
   // State
   const {user}=useUser()
   const currentuser=user
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
   const [Error,setError]=useState("")
-
-  
+  const [ADMIN_ROLES,set_ADMIN_ROLES]=useState([])
   // UI State
   const [expandedDept, setExpandedDept] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -39,34 +39,44 @@ const DepartmentManagement = (setAuth) => {
     dueDate: '',
     status:'Pending'
   });
+  const rbac_=async()=>{
+    try{
+      const response=await fetch_RBAC_department()
+      const data=response.data.data
 
+      set_ADMIN_ROLES(data.ADMIN_ROLES_DEPARTMENT)
+
+    }catch(error){
+      
+      if(isProd)Sentry.captureException(error)
+
+    }
+  }
   // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
-      const token = localStorage.getItem("authToken");
-      const headers = { 
-        Authorization: `Bearer ${token}`,
-        withCredentials: true,"ngrok-skip-browser-warning": "true"
-      };
+
+     
 
       try {
         const [deptRes, usersRes, tasksRes, statsRes] = await Promise.allSettled([
-          axios.get(`${API_URL}/department`, { headers }),
-          axios.get(`${API_URL}/users`, { headers }),
-          axios.get(`${API_URL}/tasks`, { headers }),
-          axios.get(`${API_URL}/department/stats`, { headers })
+          axios.get(`${API_URL}/department`, { withCredentials:true }),
+          axios.get(`${API_URL}/users`, {withCredentials:true }),
+          axios.get(`${API_URL}/tasks`, {withCredentials:true }),
+          axios.get(`${API_URL}/department/stats`, { withCredentials:true })
         ]);
-
+       
+       
         setDepartments(deptRes.status === 'fulfilled' ? deptRes.value.data.data : []);
-        setUsers(usersRes.status === 'fulfilled' ? usersRes.value.data : []);
+        setUsers(usersRes.status === 'fulfilled' ? usersRes.value.data.data : []);
         setTasks(tasksRes.status === 'fulfilled' ? tasksRes.value.data.data : []);
-        setStats(statsRes.status === 'fulfilled' ? statsRes.value.data : {});
+        setStats(statsRes.status === 'fulfilled' ? (statsRes.value.data.data || []) : []);
       } catch (err) {
         if (err.response?.status===401|| err.response?.status===403){
         setError("Session expired. Please log in again.");
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('sessionId');
         setAuth(false)
         window.location.href = '/adminlogin'; 
       }else{
@@ -78,6 +88,7 @@ const DepartmentManagement = (setAuth) => {
       }
     };
     fetchData();
+    rbac_()
   }, [setAuth]);
   
   // Add this right after the state declarations
@@ -85,12 +96,10 @@ const fetchDepartments = async () => {
 
   try {
     const API_URL = `${process.env.REACT_APP_API_URL}/api`
-    const token = localStorage.getItem("authToken");
-    const headers = { 
-      Authorization: `Bearer ${token}`,
-      withCredentials: true 
-    };
-    const response = await axios.get(`${API_URL}/department`, { headers });
+
+   
+   
+    const response = await axios.get(`${API_URL}/department`, { withCredentials:true });
     setDepartments(response.data.data);
   } catch (err) {
     console.error("Failed to fetch departments:", err);
@@ -195,7 +204,7 @@ const refreshDepartments = () => {
           modalData = data;
       }
   
-      console.log("Modal data:", modalData);
+      
       setModal({
         show: true,
         type,
@@ -212,12 +221,8 @@ const refreshDepartments = () => {
   // Department Operations
   const handleDepartmentSubmit = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      const headers = { 
-        Authorization: `Bearer ${token}`,
-        withCredentials: true 
-      };
 
+      
       const departmentData = {
         name: formData.name,
         headOfDepartment: {
@@ -229,11 +234,11 @@ const refreshDepartments = () => {
       let response;
       if (modal.type === 'addDept') {
         const API_URL=`${process.env.REACT_APP_API_URL}/api`
-        response = await axios.post(`${API_URL}/department`, departmentData, { headers });
+        response = await axios.post(`${API_URL}/department`, departmentData, { withCredentials:true });
         setDepartments(prev => [...prev, response.data.data]);
       } else {
         const API_URL=`${process.env.REACT_APP_API_URL}/api`
-        response = await axios.put(`${API_URL}/department/${modal.data._id}`, departmentData, { headers });
+        response = await axios.put(`${API_URL}/department/${modal.data._id}`, departmentData, { withCredentials:true });
         setDepartments(prev => prev.map(d => d._id === modal.data._id ? response.data.data : d));
       }
       
@@ -244,10 +249,10 @@ const refreshDepartments = () => {
   };
   const fetchTasks = async () => {
     try {
-      const API_URL=`${process.env.REACT_APP_API_URL}/api`
-      const token = localStorage.getItem("authToken");
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`
+     
       const response = await axios.get(`${API_URL}/tasks`, {
-        headers: { Authorization: `Bearer ${token}` },
+
         withCredentials: true
       });
       setTasks(response.data.data);
@@ -258,29 +263,27 @@ const refreshDepartments = () => {
 
   const deleteDepartment = async () => {
     try {
-      const token = localStorage.getItem("authToken");
+
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
       await axios.delete(`${API_URL}/department/${modal.data._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+
         withCredentials: true
       });
       setDepartments(prev => prev.filter(d => d._id !== modal.data._id));
       closeModal();
     } catch (err) {
-      console.error("Delete error:", err.response?.data || err.message);
-    }
+      if(isProd)Sentry.captureException(err)}
   };
 
   // User Operations
   const addUserToDepartment = async () => {
     try {
-      const token = localStorage.getItem("authToken");
+      
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
       const response = await axios.post(
         `${API_URL}/department/${modal.data._id}/users`,
         { userId: selectedUserId, name:users.find(u=>String(u._id)===String(selectedUserId))?.name },
         { 
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true 
         }
       );
@@ -292,7 +295,7 @@ const refreshDepartments = () => {
     } catch (err) {
       if (err.response?.status===401|| err.response?.status===403){
         setError("Session expired. Please log in again.");
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('sessionId');
         setAuth(false)
         window.location.href = '/adminlogin'; 
       }else{
@@ -304,12 +307,11 @@ const refreshDepartments = () => {
 
   const removeUserFromDepartment = async (departmentId,userId) => {
     try {
-      const token = localStorage.getItem("authToken");
+
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
       await axios.delete(
         `${API_URL}/department/${departmentId}/users/${userId}`,
         { 
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true 
         }
       );
@@ -318,7 +320,7 @@ const refreshDepartments = () => {
     } catch (err) {
       if (err.response?.status===401|| err.response?.status===403){
         setError("Session expired. Please log in again.");
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('sessionId');
         setAuth(false)
         window.location.href = '/adminlogin'; 
       }else{
@@ -328,16 +330,15 @@ const refreshDepartments = () => {
     }
   };
   const visibleDepartments = filteredDepartments.filter(dept => {
-    const isGlobalAccess = global_ADMIN_ROLES.includes(user.role);
-    const isDepartmentHead = String(dept.headOfDepartment.user._id) === String(user.userId);
-    //console.log(dept.headOfDepartment?.user?._id)
+    const isGlobalAccess = ADMIN_ROLES.includes(user.role);
+    const isDepartmentHead = String(dept.headOfDepartment?.user?._id) === String(user.userId);
+   
     return isGlobalAccess || isDepartmentHead;
   })
   // Task Operations
   const assignTask = async () => {
     try {
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
-      const token = localStorage.getItem("authToken");
       await axios.post(`${API_URL}/tasks`, {
         title: formData.taskTitle,
         description: formData.taskDescription,
@@ -348,10 +349,9 @@ const refreshDepartments = () => {
         status:formData.status|| 'Pending'
        // status:
       }, { 
-        headers: { Authorization: `Bearer ${token}` ,"ngrok-skip-browser-warning": "true"},
         withCredentials: true 
       });
-      //console.log(response)
+     
       //setTasks(prev => [...prev, response.data.data]);
       fetchTasks()
       closeModal();
@@ -360,38 +360,43 @@ const refreshDepartments = () => {
     }
   };
   if (loading){
-      return <div className="p-8 flex justify-center">
+      return <div className="p-8 flex justify-center items-center min-h-screen">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
   }
 
   // Components
+
   const StatsPanel = ({ department }) => (
     <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
       <h3 className="font-bold text-lg mb-3 flex items-center">
         <FiBarChart2 className="mr-2" /> Department Statistics
       </h3>
-      <div className="grid grid-cols-2 gap-4">
+      {Array.isArray(stats) &&
+        stats.map((stat)=>(
+          
+          <div className="grid grid-cols-2 gap-4" key={stat._id}>
         <StatCard 
           title="Total Members" 
-          value={department.users.length} 
+          value={stat?.memberCount} 
           trend="↗︎ 2 this month" 
-        />
+          />
         <StatCard 
           title="Active Tasks" 
-          value={stats[department._id]?.activeTasks || 0} 
-          trend={`${stats[department._id]?.taskCompletion || 0}% completed`} 
+          value={stat?.activeTasks || 0} 
+          trend={`${stat?.taskCompletion || 0}% completed`} 
         />
         <StatCard 
           title="Avg. Task Time" 
-          value={stats[department._id]?.avgTaskTime || 'N/A'} 
+          value={Math.ceil(stat?.avgTaskTimeHours) || 'N/A'} 
           trend="Last month: 3.2 days" 
-        />
+          />
         <StatCard 
           title="Head Since" 
           value={new Date(department.createdAt.split("T")[0]).toLocaleDateString() || 'N/A'} 
-        />
+          />
       </div>
+        ))}
     </div>
   );
 
@@ -399,7 +404,7 @@ const refreshDepartments = () => {
     <div className="mt-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium text-gray-700">Department Tasks</h3>
-        {(department.headOfDepartment?.user._id === user.userId || global_ADMIN_ROLES.includes(user.role)) && (
+        {(String(department.headOfDepartment?.user?._id) === String(user.userId) || ADMIN_ROLES.includes(user.role)) && (
           <button
             onClick={() => openModal('assignTask', department)}
             className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded flex items-center"
@@ -408,11 +413,11 @@ const refreshDepartments = () => {
           </button>
         )}
       </div>
-      {tasks.filter(t => t.department?._id === department._id || t.department === department._id).length === 0 ? (
+      {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).length === 0 ? (
         <p className="text-gray-500 text-sm italic">No tasks assigned</p>
       ) : (
         <div className="space-y-2">
-          {tasks.filter(t => t.department._id === department._id).map(task => (
+          {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).map(task => (
             <div key={task._id} className="p-3 bg-white rounded border border-gray-200">
 
                <div className='flex '>
@@ -430,7 +435,7 @@ const refreshDepartments = () => {
                   <p className="text-sm text-gray-500">{task.description}</p>
                 </div>
                 <span className="text-xs bg-green-100 text-green-800 px-2 py-2 rounded-full">
-                    Assigned to: {department.users.find(u => String(u._id) === String(task.assignedTo._id))?.name || 'Unassigned'}
+                  Assigned to: {department.users.find(u => String(u._id) === String(task.assignedTo?._id || task.assignedTo))?.name || 'Unassigned'}
                 </span>
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500">
@@ -459,7 +464,7 @@ const refreshDepartments = () => {
         </button>
       </div>
       <div className="space-y-2">
-        {department.users.map(user => (
+        {(department.users || []).map(user => (
           
           <div key={user._id} className="flex justify-between items-center p-3 bg-white rounded border border-gray-200">
             <div className="flex items-center">
@@ -472,7 +477,7 @@ const refreshDepartments = () => {
               )}
             </div>
             
-            {(department.headOfDepartment?.user._id === currentuser.userId || global_ADMIN_ROLES.includes(currentuser.role) )&& (
+            {(department.headOfDepartment?.user._id === currentuser.userId || ADMIN_ROLES.includes(currentuser.role) )&& (
               <button
                 onClick={() =>removeUserFromDepartment(department._id,user._id)}
                 className="text-red-500 hover:text-red-700"
@@ -489,14 +494,14 @@ const refreshDepartments = () => {
   if (loading) return <div className="text-center py-8">Loading departments...</div>;
 
   return (
-    <div className="max-w-full sm:max-w-md md:max-w-full lg:max-w-4xl xl:max-w-6xl mx-auto p-6 mt-10"
+    <div className="max-w-full sm:max-w-md md:max-w-full lg:max-w-4xl xl:max-w-6xl mx-auto p-6 mt-10 mb-15"
       >
             {/* Header and Search */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 flex-wrap mt-4 md:items-center">
           <h1 className="text-2xl font-bold text-gray-800 sm:mb-0 mb-4">Department Management</h1>
           
           <div className="flex flex-col sm:flex-row sm:space-x-4 w-full sm:w-auto">
-            {global_ADMIN_ROLES.includes(user.role) && (
+            {ADMIN_ROLES.includes(user.role) && (
               <div className="relative mb-4 sm:mb-0 w-full sm:w-auto">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -509,7 +514,7 @@ const refreshDepartments = () => {
               </div>
             )}
             
-            {global_ADMIN_ROLES.includes(user.role) && (
+            {ADMIN_ROLES.includes(user.role) && (
               <button
                 onClick={() => openModal('addDept')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
@@ -617,6 +622,7 @@ const refreshDepartments = () => {
                   <option value="Environmental_lab_dep">Environmental Lab</option>
                   <option value="accounts_dep">Accounts</option>
                   <option value="Human resources">Human Resources</option>
+                  <option value="IT">IT</option>
                 </select>
 
                 </div>
@@ -629,7 +635,8 @@ const refreshDepartments = () => {
                     disabled={modalLoading}
                   >
                     <option value="">Select Head of Department</option>
-                    {modal.data?.users?.map(user => (
+   
+                    {Array.isArray(modal?.data?.users)&&modal.data.users.map(user => (
                       <option key={user._id} value={user._id}>{user.name}</option>
                     ))}
                   </select>

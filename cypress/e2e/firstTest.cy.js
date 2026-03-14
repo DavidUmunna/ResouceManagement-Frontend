@@ -16,7 +16,7 @@ describe("template spec", () => {
   });
 
   it("allows access to dashboard for authenticated users", () => {
-    localStorage.setItem("authToken", "fake-valid-token");
+    localStorage.setItem("sessionId", "fake-valid-token");
 
     // Intercept the auth check API call
     cy.intercept("GET", "/api/access", {
@@ -29,7 +29,7 @@ describe("template spec", () => {
   });
 
   it("redirects authenticated users from /adminlogin to /dashboard", () => {
-    localStorage.setItem("authToken", "fake-valid-token");
+    localStorage.setItem("sessionId", "fake-valid-token");
     
 
     // Intercept necessary API calls

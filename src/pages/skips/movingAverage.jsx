@@ -21,6 +21,7 @@ const MovingAverageChart = () => {
   const [skipData, setSkipData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [DateField,setDateField]=useState('DM')
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setDate(1)), // 1st of current month
     endDate: new Date() // Today
@@ -46,16 +47,18 @@ const MovingAverageChart = () => {
   };
 
   // Fetch skip data
-  const fetchSkipData = async () => {
+  const fetchSkipData = async (start=formatDate(dateRange.startDate),
+    end=formatDate(dateRange.endDate)) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       
       const response = await axios.get(`${API_URL}/skiptrack/analytics`, {
         params: {
-          startDate: formatDate(dateRange.startDate),
-          endDate: formatDate(dateRange.endDate),
+          startDate: start,
+          endDate: end,
+          DateField:DateField,
           groupBy: 'day' // Can be 'day', 'week', or 'month'
         },
         headers: {
@@ -69,7 +72,7 @@ const MovingAverageChart = () => {
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 402) {
         setError("Session expired. Please log in again.");
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('sessionId');
         window.location.href = '/adminlogin'; 
       } else {
         setError('Failed to fetch skip data');
@@ -85,7 +88,7 @@ const MovingAverageChart = () => {
 
         fetchSkipData();
     }
-  }, [dateRange]);
+  }, []);
 
   // Prepare chart data
   const prepareChartData = () => {
@@ -188,6 +191,10 @@ const MovingAverageChart = () => {
       startDate: start,
       endDate: end 
     });
+    if (start && end && DateField){
+      fetchSkipData(start,end);
+    }
+
   };
 
   if (loading) {
@@ -207,14 +214,14 @@ const MovingAverageChart = () => {
       <div className="flex flex-col  justify-between items-start xl:items-center mb-4 lg:mb-6 gap-4">
         <h2 className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-800">Skip Trends Analysis</h2>
         
-        <div className="flex flex-col  gap-3 w-full xl:w-auto">
+        <div className="flex  flex-wrap p-3  gap-3 w-full xl:w-auto">
           {/* Date range picker */}
           <div className="relative w-full lg:w-56 xl:w-64">
             <DatePicker
               selectsRange={true}
               startDate={dateRange.startDate}
               endDate={dateRange.endDate}
-              onChange={handleDateRangeChange}
+              onChange={(update)=>handleDateRangeChange(update)}
               isClearable={true}
               placeholderText="Select date range"
               className="pl-6 pr-7 py-2 mr-5 w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
@@ -231,6 +238,21 @@ const MovingAverageChart = () => {
             <option value={7}>7-Day Moving Avg</option>
             <option value={14}>14-Day Moving Avg</option>
             <option value={30}>30-Day Moving Avg</option>
+          </select>
+      
+          <select
+          value={DateField}
+          
+          onChange={(e)=>setDateField(e.target.value)}
+           className="w-full lg:w-40 xl:w-48 px-3 lg:px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm lg:text-base"
+        
+          >
+
+            
+            <option value={"DM"}>DM(Mobilization)</option>
+            <option value={"DRL"}>DRL(Recieved)</option>
+            <option value={"DD"} >DD(Demobilization)</option>
+            <option value={"DF"}>DF(Filled)</option>
           </select>
         </div>
       </div>

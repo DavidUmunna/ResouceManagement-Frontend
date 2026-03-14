@@ -1,16 +1,19 @@
 /*eslint-disable react-hooks/exhaustive-deps */
 /*eslint-disable no-unused-vars */
+import * as Sentry from '@sentry/react';
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../components/usercontext';
-import { useNavigate } from 'react-router';
 import axios from "axios";
-import RecentActivity from './recentactivity';
 import { Plus, Minus,Trash2 } from "lucide-react"
-import PaginationControls from './Paginationcontrols';
-
+import PaginationControls from '../../components/Paginationcontrols';
+import Categoryform from './Category_form';
+import CategorySelect from "./Category_select"
+import LoadingModal from "./Loading_modal"
+import { isProd } from '../../components/env';
 const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
-  const navigate = useNavigate();
+ 
   const { user } = useUser();
+  const [isSubmitting, setIsSubmitting]=useState(false)
   const [data, setData] = useState({
     activities: [],
     pagination: {
@@ -19,6 +22,8 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       total: 0
     }
   });
+ 
+
   const [categories, setCategories] = useState([]);
   const [formdata, setformdata] = useState({
     name: '',
@@ -36,14 +41,16 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [editingQuantities, setEditingQuantities] = useState({});
-
+  
   const fetchData = async (page=data.pagination?.page,limit=data.pagination?.limit) => {
     
     try {
-      const token = localStorage.getItem('authToken');
+      
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const [inventoryRes, categoriesRes] = await Promise.all([
-        axios.get(`${API_URL}/inventory`, { params: { page, limit },
+        
+        axios.get(`${API_URL}/inventory/${user.Department}`, { params: { page, limit },
             headers: {
               Authorization: `Bearer ${token}`,
               "ngrok-skip-browser-warning": "true",
@@ -67,7 +74,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
         setCategories(categoriesRes.data.data.categories || []);
         
         //console.log(categoriesRes.data.data.categories)
-        console.log(categories)
+      
         // Initialize editing quantities
         const initialEditingQuantities = {};
         inventoryRes.data.data.forEach(item => {
@@ -91,11 +98,11 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       } catch (err) {
         if (err.response?.status === 401 || err.response?.status === 403) {
           setError("Session expired. Please log in again.");
-          localStorage.removeItem('authToken');
-          navigate("/logout");
+          localStorage.removeItem('sessionId');
+          
           window.location.href = '/adminlogin'; 
         } else {
-          console.error('Failed to fetch data:', err);
+          Sentry.captureException( err);
         }
       } finally {
         setloading(false);
@@ -103,7 +110,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
     };
   useEffect(() => {
     fetchData();
-  }, [navigate]);
+  }, []);
 
   const resetForm = () => {
     setformdata({
@@ -128,7 +135,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
 
       if (quantityDifference === 0) return;
 
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const res = await axios.put(`${API_URL}/inventory/${itemId}`, {
         quantity: quantityDifference,
@@ -152,7 +159,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       }, ...Activities]);
       
     } catch (err) {
-      console.error('Failed to update quantity:', err);
+      if(isProd)Sentry.captureException(err);
       // Revert to original quantity in UI if update fails
       setEditingQuantities({
         ...editingQuantities,
@@ -163,13 +170,13 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
 
   const addQuantity = async (itemId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const res = await axios.put(`${API_URL}/inventory/${itemId}`, {
         quantity: 1,
         userId: user?.userId
       }, {
-        headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning":"true" }
+         withCredentials:true
       });
       
       // Update both inventoryItems and editingQuantities
@@ -196,7 +203,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       onInventoryChange()
       
     } catch (err) {
-      console.error('Failed to add quantity:', err);
+      if(isProd)Sentry.captureException(err);
       // Revert to original quantity in UI if update fails
       setEditingQuantities(prev => ({
         ...prev,
@@ -207,13 +214,13 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
   
   const removeQuantity = async (itemId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const res = await axios.put(`${API_URL}/inventory/${itemId}`, {
         quantity: -1,
         userId: user?.userId
       }, {
-        headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning":"true" }
+        withCredentials:true
       });
       
       // Update both inventoryItems and editingQuantities
@@ -240,7 +247,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       onInventoryChange()
       
     } catch (err) {
-      console.error('Failed to remove quantity:', err);
+      if(isProd)Sentry.captureException(err)
       // Revert to original quantity in UI if update fails
       setEditingQuantities(prev => ({
         ...prev,
@@ -261,28 +268,30 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
   const DeleteItem=async(itemId)=>{
     try{
       setloading(true)
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const response=await axios.delete(`${API_URL}/inventory/${itemId}`,{
         headers: { Authorization: `Bearer ${token}` }
       })
 
       setInventoryItems(prevItems => 
-        prevItems.map(item => 
-          item._id === itemId ? { ...item, quantity: response.data.data.quantity } : item
+        prevItems.filter(item => item._id!==itemId
+          
         )
       );
 
 
 
     }catch(error){
-      console.error('Failed to Delete item:', error);
-      
+      if(isProd)Sentry.captureException(error)
+     
       setEditingQuantities(prev => ({
         ...prev,
         [itemId]: inventoryItems.find(item => item._id === itemId)?.quantity || 0
       }));
 
+    }finally{
+      setloading(false)
     }
   }
 
@@ -297,8 +306,9 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true)
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const res = await axios.post(`${API_URL}/inventory`, {
         ...formdata,
         AddedBy: user?.userId
@@ -328,12 +338,14 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         setError("Session expired. Please log in again.");
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('sessionId');
         setAuth(false);
           window.location.href = '/adminlogin'; 
       } else {
         console.error('Create failed:', err.response?.data || err.message);
       }
+    }finally{
+      setIsSubmitting(false)
     }
   };
 
@@ -344,7 +356,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       return nameMatch || descMatch;
     })
     .filter(item => {
-      return selectedCategory === 'All' || item?.category === selectedCategory;
+       return selectedCategory === 'All'||item?.category === selectedCategory;
     })
     .sort((a, b) => {
       const aVal = a?.[sortConfig.key];
@@ -395,19 +407,9 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Category</label>
-                    <select
-                      name="category"
-                      value={formdata.category}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border rounded"
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(category => (
-                        <option key={category._id} value={category.name}>{category.name}</option>
-                      ))}
-                    </select>
+                    <Categoryform user={user} categories={categories}
+                     formdata={formdata} handleInputChange={handleInputChange}
+                    />
                   </div>
                 </div>
                 <div className="mb-4">
@@ -422,30 +424,19 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
                     required
                   />
                 </div>
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                <button 
+
+                type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                   Add item
                 </button>
               </form>
             )}
 
-            <div className="mb-4 flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="p-2 border rounded flex-grow"
+            <div>
+              <CategorySelect user={user} categories={categories} searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+              
               />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="p-2 border rounded"
-              >
-                <option value="All">All Categories</option>
-                {categories.map(category => (
-                  <option key={category._id} value={category.name}>{category.name}</option>
-                ))}
-              </select>
             </div>
 
             {loading ? (
@@ -521,9 +512,20 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
                 </table>
               </div>
             )}
-          </div>
-          {Error && <div className="text-red-500 mt-2">{Error}</div>}
+            </div>
+           {Error && (
+            <div className="p-4 flex  justify-center items-center  text-red-600 border-l-4 border-red-500 bg-red-200">
+              {Error}
+            </div>
 
+            )}
+            {isSubmitting &&(
+              <div>
+                <LoadingModal/>
+              </div>
+            ) 
+
+            }
                   <div>
                         {/* Your data display */}
                         <PaginationControls

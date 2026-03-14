@@ -1,34 +1,26 @@
-FROM node:17-alpine AS build
+# Use Node.js image to build the app
+FROM node:18 as builder
+RUN useradd -ms /bin/sh -u 1001 app
 
-# Set the working directory
-WORKDIR /usr/src/app
+# Create working directory and set ownership
+RUN mkdir -p /app && chown -R app:app /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
 
-# Install dependencies
-RUN npm install 
+USER app
 
-# Copy the rest of the application files
-COPY . .
-
+WORKDIR /app
+COPY --chown=app:app . .
+RUN npm install
 RUN npm run build
 
+# Use nginx to serve the frontend
+FROM nginx:alpine
 
-FROM nginx:alpine AS production
+# Copy built files to nginx
+COPY --from=builder /app/build /usr/share/nginx/html
 
-
-# Copy the custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy the build output to the Nginx HTML directory
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
-
-
-ENV PORT=3001
-# Expose the port the app runs on
+# Copy custom nginx config (optional)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
-# Command to run the application
-CMD ["nginx", "-g","daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]

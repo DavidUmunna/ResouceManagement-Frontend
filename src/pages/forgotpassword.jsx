@@ -1,6 +1,8 @@
+/* eslint-disable  no-unused-vars */
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { sendResetLink, updateUserpassword } from "../services/userService"; // update these functions
+import { sendResetLink, } from "../services/userService"; // update these functions
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function ForgotPassword() {
@@ -30,14 +32,14 @@ export default function ForgotPassword() {
     try {
       const response = await sendResetLink(email);
 
-      console.log(response) // assume success = true if mail sent
+     // assume success = true if mail sent
       if (response.data.success) {
         setStep(2); // show email sent message
       } else {
-        setError(response.response.data?.message);
+        setError(response.response.data?.message|| "Operation failed");
       }
     } catch (error) {
-      console.log("eerr",error)
+   
       setError(error?.response?.data.message || "Something went wrong.");
     } finally {
       setLoading(false);

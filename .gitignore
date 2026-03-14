@@ -4,14 +4,20 @@
 node_modules/
 /.pnp
 .pnp.js
+.npm_cache/
 
 
 # testing
 /coverage
+src/__tests__
+__mocks__
+
 
 # production
 /build
+/backup_builds
 .env
+out
 # misc
 .DS_Store
 .env.local
@@ -29,4 +35,9 @@ build.zip
 build.rar
 nginx.conf
 
+#configs
+jest.config.js
+.babelrc
+
+CNAME
 

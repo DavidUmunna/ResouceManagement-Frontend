@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useUser } from '../components/usercontext';
 import {  FiUsers } from 'react-icons/fi';
-
+import * as Sentry from "@sentry/react"
+import { isProd } from '../components/env';
 const UserTasks = () => {
   const { user } = useUser();
   const [tasks, setTasks] = useState([]);
@@ -14,13 +15,17 @@ const UserTasks = () => {
     try {
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
 
-      const token = localStorage.getItem('authToken');
       const res = await axios.get(`${API_URL}/tasks/${user.userId}`, {
-        headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning":"true" }
+         withCredentials:true
       });
       setTasks(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch tasks:', err);
+      if(isProd){
+
+        Sentry.captureMessage('Failed to fetch tasks:')
+        Sentry.captureException(err)
+      }
+
     } finally {
       setLoading(false);
     }
@@ -42,11 +47,12 @@ const UserTasks = () => {
     try {
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
 
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       await axios.patch(
         `${API_URL}/tasks/${taskId}`,
         { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning":"true" } },
+        { headers: { Authorization: `Bearer ${token}`,"ngrok-skip-browser-warning":"true" },
+      withCredentials:true },
         
       );
       fetchTasks();

@@ -1,26 +1,29 @@
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon,ClipboardDocumentListIcon, PlusCircleIcon,UserIcon,UsersIcon,ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import React, { useState } from 'react';
+import React, { useState,useRef,useEffect } from 'react';
 import { useUser } from "./usercontext";
 import user_img from "./assets/user.png";
 import { motion } from 'framer-motion';
-import { PanelLeft } from 'lucide-react';
+import { isProd } from './env';
+import { PanelLeft,CalendarClock } from 'lucide-react';
 import Sidebar from './Sidebar';
-
-export const admin_roles = ["procurement_officer", "human_resources", "internal_auditor", "global_admin","admin",
-  "Financial_manager","waste_management","Environmental_lab_manager","PVT_manager"];
-
+import {fetch_RBAC} from "../services/rbac_service"
+import * as Sentry from "@sentry/react"
+import {FiFileText} from "react-icons/fi"
+import { EnableNotifications } from '../firebaseConfig';
 const navigation = [
-  { name: 'Requests', to: '/requestlist', icon: ClipboardDocumentListIcon },
-  { name: 'Create', to: '/createorder', icon: PlusCircleIcon },
-  { name: 'Add Users', to: '/addusers', icon: UserIcon, visibleTo: ['admin', 'global_admin'] },
-  { name: 'Users', to: '/users', icon: UsersIcon, visibleTo: ['admin', 'global_admin'] },
-  {name:'Tasks', to:'/usertasks', icon: ClipboardDocumentCheckIcon }
+  { name: 'Requests', to: '/admin/requestlist', icon: ClipboardDocumentListIcon , hiddenFor:['Visitor']},
+  { name: 'Create Request', to: '/admin/createorder', icon: PlusCircleIcon, hiddenFor:['Visitor'] },
+  { name: 'Users', to: '/admin/users', icon: UsersIcon, visibleTo: [ 'global_admin'] },
+  { name:'Tasks', to:'/admin/usertasks', icon: ClipboardDocumentCheckIcon, hiddenFor:['Visitor']},
+  { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["Visitor"] },
+  {name:'Schedule Manager', to:'/admin/schedulemanager', icon: CalendarClock ,visibleTo:['Accountant',"Financial_manager"] },
+  
 ];
 
 const userNavigation = [
-  { name: 'Your Profile', to: "/dashboard" },
+  { name: 'Your Profile', to: "/admin/dashboard" },
   { name: 'Sign out', to: '/signout' },
 ];
 
@@ -33,25 +36,54 @@ export default function Navbar() {
   const { user } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
+  const sidebarRef=useRef(null);
+  const [ADMIN_ROLES_GENERAL,set_ADMIN_ROLES_GENERAL]=useState([])
+  
+
+
   //const [isMobileMenuOpen,setIsMobileMenuOpen]=useState(true)
 
   const isActive = (path) => location.pathname === path;
 
   const filteredNav = navigation.filter(item => {
     if (item.visibleTo) return item.visibleTo.includes(user?.role);
+    if (item.hiddenFor?.includes(user?.role)) return null;
     return true;
+
   });
+  
+    useEffect(()=>{
+        const rbac_=async()=>{
+          try{
+
+            const response=await fetch_RBAC()
+           
+             if (Array.isArray(response.data.data.ADMIN_ROLES_GENERAL)) {
+          set_ADMIN_ROLES_GENERAL(response.data.data.ADMIN_ROLES_GENERAL);
+          } else {
+
+          set_ADMIN_ROLES_GENERAL([]);
+        }
+          }catch(error){
+
+            if (isProd) Sentry.captureException(error)
+          }
+        }
+        rbac_()
+
+    },[user])
+    
 
   return (
     <>
       <Disclosure as="nav" className="bg-gray-800 fixed top-0 left-0 w-full z-20">
         {({ open }) => (
           <>
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center">
                   {/* Sidebar toggle (only for admin) */}
-                  {admin_roles.includes(user?.role) && (
+                  {ADMIN_ROLES_GENERAL.includes(user?.role) && (
                     <button
                       onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                       className="p-2 text-gray-400 hover:text-white mr-2"
@@ -80,7 +112,7 @@ export default function Navbar() {
                             isActive(item.to)
                               ? 'bg-gray-900 text-white'
                               : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                            'rounded-md px-3 py-2 text-sm font-medium flex items-center gap-1'
+                            'rounded-md px-2 py-1 text-sm font-medium flex items-center gap-1'
                           )}
                         >
                           <item.icon className="h-5 w-5" />
@@ -98,6 +130,9 @@ export default function Navbar() {
                       type="button"
                       className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none"
                       aria-label="Notifications"
+                      onClick={()=>{
+                        alert("Notifications Activated")
+                        EnableNotifications()}}
                     >
                       <BellIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
@@ -124,7 +159,7 @@ export default function Navbar() {
                                   to={item.to}
                                   className={classNames(
                                     active ? 'bg-gray-100' : '',
-                                    'block px-4 py-2 text-sm text-gray-700'
+                                    'block px-1 py-1 text-sm text-gray-700'
                                   )}
                                 >
                                   {item.name}
@@ -205,7 +240,7 @@ export default function Navbar() {
 
       {/* Mobile Bottom Navigation */}
       <motion.div
-        className="fixed bottom-0 w-full  bg-gray-800 p-2 flex  justify-around items-center border-t border-gray-700 z-50 md:hidden "
+        className="fixed bottom-0 w-full  bg-gray-800 p-0 flex  justify-around items-center border-t border-gray-700 z-50 md:hidden "
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3 }}
@@ -213,7 +248,7 @@ export default function Navbar() {
         {filteredNav.map((item) => (
           <button
             key={item.name}
-            className="flex flex-col items-center justify-center p-2 rounded-full hover:bg-gray-700 transition-colors duration-200"
+            className="flex flex-col items-center justify-center p-1 rounded-full hover:bg-gray-700 transition-colors duration-200"
             onClick={() => navigate(item.to)}
           >
             <item.icon className="h-6 w-6 text-gray-300 hover:text-white" />
@@ -222,7 +257,7 @@ export default function Navbar() {
         ))}
       </motion.div>
 
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar isOpen={isSidebarOpen} ref={sidebarRef} onClose={() => setIsSidebarOpen(false)} />
     </>
   );
 }

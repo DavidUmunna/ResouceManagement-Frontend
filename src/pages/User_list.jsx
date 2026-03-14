@@ -1,8 +1,11 @@
+import * as Sentry from "@sentry/react"
 import { useEffect, useState } from "react";
 import { get_users, deleteUser, updateUser } from "../services/userService";
 import { motion, AnimatePresence } from "framer-motion";
-
+import AddUserModal from "./AddUserModal";
 import {Users} from "lucide-react"
+import { fetch_RBAC_ALL } from "../services/rbac_service";
+import { isProd } from "../components/env";
 
 // Animation Variants
 const containerVariants = {
@@ -28,39 +31,61 @@ const departmentColors = {
 };
 
 // Role options
-const roleOptions = ["procurement_officer", "human_resources", "internal_auditor", "global_admin","admin",
-  "Financial_manager","waste_management","Environmental_lab_manager","PVT_manager","staff"];
 
 export default function UserList() {
   const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("All");
   const [loading,setloading]=useState(false)
   const [editingUser, setEditingUser] = useState(null);
+  const [ALLROLES, set_ALLROLES]=useState([])
   const [editForm, setEditForm] = useState({
     name: "",
     Department: "",
     canApprove: false,
     role: "",
-    password: ""
+    password: "",
+    WorkStatus:"",
+    email:""
   });
+  const [openAdduser,setOpenAdduser]=useState(false)
   const [showEditModal, setShowEditModal] = useState(false);
+  const fetch_all=async()=>{
+    try{
+      const response=await fetch_RBAC_ALL()
+
+      set_ALLROLES(response.data.data.ALL_ROLES)
+
+    }catch(error){
+      if(isProd){
+
+        Sentry.captureException(error)
+        Sentry.captureMessage("there was an error while fetching roles")
+      }
+
+    }
+  }
+
 
   useEffect(() => {
     fetch_users();
+    fetch_all()
     
-  }, [editingUser]);
+  }, []);
 
   const fetch_users = async () => {
     try {
       setloading(true)
       const user_data = await get_users();
-      if (Array.isArray(user_data)) {
-        setUsers(user_data || []);
+    
+      if (Array.isArray(user_data.data)) {
+        setUsers(user_data.data || []);
       } else {
         throw new Error("Invalid data format");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+
+      if (isProd)Sentry.captureException(error)
+      
     }finally{
       setloading(false)
     }
@@ -68,7 +93,7 @@ export default function UserList() {
 
   /*const getDepartment = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const department_data = await axios.get(`${API_URL}/department`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -84,15 +109,17 @@ export default function UserList() {
     setUsers(users.filter((user) => user._id !== userId));
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = (editeduser) => {
 
-    setEditingUser(user);
+    setEditingUser(editeduser);
     setEditForm({
-      name: user.name,
-      Department: user.Department,
-      canApprove: user.canApprove || false,
-      role: user.role,
-      password: "" // Leave blank for security
+      name: editeduser.name||"",
+      Department: editeduser.Department||'',
+      canApprove: editeduser.canApprove || false,
+      role: editeduser.role||"",
+      password:editeduser.password||'',
+      WorkStatus:editeduser.role||'',
+      email:editeduser.email ||""   // Leave blank for security
     });
     setShowEditModal(true);
   };
@@ -106,7 +133,6 @@ export default function UserList() {
       return;
     }
 
-    console.log("Submitting edit form:", editForm);
 
     const updatedUser = await updateUser(editingUser._id, editForm);
 
@@ -115,7 +141,7 @@ export default function UserList() {
       return;
     }
 
-    console.log(updatedUser)
+   
     setUsers(prevUsers =>
       prevUsers.map(user =>
         user._id === editingUser._id ? updatedUser.data : user
@@ -125,7 +151,12 @@ export default function UserList() {
     setShowEditModal(false);
     // Optional: Show success toast/alert
   } catch (error) {
-    console.error("Error updating user:", error);
+    if (isProd){
+
+      Sentry.captureMessage("Error updating user")
+      Sentry.captureException(error)
+    }
+    
     // Optional: Show error toast/alert
   }
 };
@@ -138,19 +169,20 @@ export default function UserList() {
       [name]: type === 'checkbox' ? checked : value
     });
   };
-
-  const filteredUsers = filter === "all" 
+  //console.log("filter:",filter)
+  const filteredUsers = filter === "All" || filter=== ""
     ? users 
     : users.filter(user => user.Department === filter);
 
   if (loading) {
-    return <div className="p-8 flex justify-center">
+    return <div className="p-8 flex justify-center items-center min-h-screen">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
   }
 
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 mt-10">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 mt-10 mb-11">
       {/* Edit User Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -182,6 +214,17 @@ export default function UserList() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="text"
+                    name="email"
+                    value={editForm.email}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
@@ -191,13 +234,16 @@ export default function UserList() {
                     onChange={handleInputChange}
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   >
-                  <option value="">Select Department</option>
-                  <option value="waste_management_dep">Waste Management</option>
-                  <option value="PVT">PVT</option>
-                  <option value="Environmental_lab_dep">Environmental Lab</option>
-                  <option value="accounts_dep">Accounts</option>
-                  <option value="Human resources">Human Resources</option>
-
+                    <option value="">Select Department</option>
+                    <option value="waste_management_dep">Waste Management</option>
+                    <option value="PVT">PVT</option>
+                    <option value="Environmental_lab_dep">Environmental Lab</option>
+                    <option value="accounts_dep">Accounts</option>
+                    <option value="Human resources">Human Resources</option>
+                    <option value="IT">Information Technology</option>
+                    <option value="Administration">Administration</option>
+                    <option value="Business_Develoment">Business Development</option>
+           
                   </select>
                 </div>
                 
@@ -210,10 +256,28 @@ export default function UserList() {
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     required
                   >
+                    
                     <option value="">Select Role</option>
-                    {roleOptions.map(role => (
-                      <option key={role} value={role}>{role}</option>
+                    {ALLROLES?.map((user,index) => (
+                      <option key={index} value={user}>{user}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label>Work Status</label>
+                  <select
+                  name="WorkStatus"
+                  value={editForm.WorkStatus}
+                  onChange={handleInputChange}
+                   className="w-full p-2 border border-gray-300 rounded-lg"
+                  required
+                  >
+                    <option value="">Select Work Status</option>
+                    <option value="On-Site">On-Site</option>
+                    <option value="Remote">Remote</option>
+                    <option value="On-Leave">On-Leave</option>
+
                   </select>
                 </div>
                 
@@ -262,6 +326,12 @@ export default function UserList() {
           </motion.div>
         </div>
       )}
+      {openAdduser&&(
+          <AddUserModal
+          onClose={()=>setOpenAdduser(false)}        
+          />
+        )
+        }
 
       {/* Main User List */}
       <motion.div
@@ -276,20 +346,30 @@ export default function UserList() {
               <Users className="h-6 w-6 text-gray-800" />
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">User Management</h2>
             </div>
-            
+            <div className="flex  justify-between ">
+
+            <button className="p-3 bg-gray-700 text-white rounded-lg mx-3 font-bold"
+            onClick={()=>setOpenAdduser(true)}
+            >
+                Add User
+            </button>
             <div className="flex flex-wrap gap-2">
+              
               <select 
                 onChange={(e) => setFilter(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Select Department</option>
+                >
+                <option value="All">Select Department</option>
                 <option value="waste_management_dep">Waste Management</option>
                 <option value="PVT">PVT</option>
                 <option value="Environmental_lab_dep">Environmental Lab</option>
                 <option value="accounts_dep">Accounts</option>
                 <option value="Human resources">Human Resources</option>
-
+                <option value="IT">Information Technology</option>
+                <option value="Administration">Administration</option>
+           
               </select>
+            </div>
             </div>
           </div>
         </div>
@@ -300,7 +380,7 @@ export default function UserList() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <p className="text-gray-500">No users found{filter !== "all" && ` in ${filter} Department`}.</p>
+            <p className="text-gray-500">No users found{filter !== "All" && ` in ${filter} Department`}.</p>
           </motion.div>
         ) : (
           <motion.ul 
@@ -348,18 +428,28 @@ export default function UserList() {
                             <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
                               {person.role}
                             </span>
+                            
                           )}
+                          {(person.WorkStatus)&&
+                            <span className={`text-xs px-2 py-1  rounded-full
+                              ${person.WorkStatus==="On-Site"?" bg-green-100 ": "bg-red-100" }`
+                            }>
+                              {person?.WorkStatus}
+                            </span>
+                          }
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-end sm:justify-normal gap-3">
+                     
                       <motion.button
                         onClick={() => handleEdit(person)}
                         className="px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition font-medium flex items-center gap-1"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
+
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
@@ -383,6 +473,7 @@ export default function UserList() {
             </AnimatePresence>
           </motion.ul>
         )}
+        
       </motion.div>
     </div>
   );

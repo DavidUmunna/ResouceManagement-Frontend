@@ -13,6 +13,7 @@ const Navbar = () => {
 
   const navLinks = [
     { id: 1, text: "About us", to:"/aboutus" },
+    //{id:2, text:"Subscription", to:"/subscription"}
     //{ id: 2, text: "Pricing", to: "#pricing" },
   ];
 
@@ -38,7 +39,9 @@ const Navbar = () => {
                 {link.text}
               </Link>
             ))}
-            <button className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">
+            <button
+            onClick={()=>navigate("/companydata")}            
+            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">
               Get Started
             </button>
             <button
@@ -88,7 +91,9 @@ const Navbar = () => {
                   {item.text}
                 </Link>
               ))}
-              <button className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gray-800 hover:bg-indigo-700">
+              <button
+              onClick={()=>navigate("/companydata")}
+               className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gray-800 hover:bg-indigo-700">
                 Get Started
               </button>
               <button

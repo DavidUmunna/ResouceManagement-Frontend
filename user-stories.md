@@ -16,3 +16,6 @@
 ##request approval system
 -Department of users that make requests will be visible ✅
 -
+
+## Disbursement Scheduling Workflow
+As a Managing Director, I want to receive a list of funding schedules submitted by the Accounts Department, so I can review and prioritize which requests to fund, and send the selected items back for disbursement.

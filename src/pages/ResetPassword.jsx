@@ -39,7 +39,7 @@ const ResetPassword=()=>{
     
         try {
           const response = await updateUserpassword(token, newPassword);
-          console.log("response",response)
+         
           if (response.success) {
             setStep(3); // success
           } else {
