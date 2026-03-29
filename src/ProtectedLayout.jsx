@@ -14,6 +14,7 @@ import FileTracking from "./pages/FileTracking";
 import AiToolsPage from "./pages/FileTracking/Dashboard/AiToolsPage";
 import TendersPage from "./pages/Tenders";
 
+
 // lazy loaded components
 const  DepartmentAssignment= React.lazy(()=>import("./pages/Department_assignment")) 
 const InventoryManagement =React.lazy(()=>import("./pages/inventorymanagement/ParentComp")) ;
@@ -22,6 +23,7 @@ const Monitoring =React.lazy(()=>import("./pages/Monitoring"))
 const  AssetsManagement=React.lazy(()=>import("./pages/AssetManagement/Assetmanagement"))
 const ScheduleManager =React.lazy(()=>import("./pages/SchedulingComponents/ScheduleManager"))
 const DraftSchedules =React.lazy(()=>import('./pages/SchedulingComponents/ScheduleManager/DraftSchedules')) ;
+const FeedbackPage=React.lazy(()=>import("./pages/Feedback"))
 const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
     return (
         
@@ -49,6 +51,18 @@ const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
                           isauthenticated ? (
                               
                               <SkipsManagement />
+                              
+                          ) : (
+                            <Navigate to="/adminlogin" />
+                          )
+                        }
+                      />
+                       <Route
+                        path="feedback"
+                        element={
+                          isauthenticated ? (
+                              
+                              <FeedbackPage />
                               
                           ) : (
                             <Navigate to="/adminlogin" />

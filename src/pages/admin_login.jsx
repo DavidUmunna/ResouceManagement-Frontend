@@ -107,7 +107,7 @@ export default function Sign_in({ setAuth }) {
                  </label>
                  <div className="text-sm">
                      <Link to="/" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                       Home
+                        Home
                      </Link>
                    </div>
                  </div>

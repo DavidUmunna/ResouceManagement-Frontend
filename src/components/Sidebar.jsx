@@ -1,9 +1,11 @@
 import {  PlusSquare,History, FileSearch, Truck, Building2, Briefcase,Activity, Brain } from 'lucide-react';
+import {AiOutlineWarning} from "react-icons/ai"
 import {FiFileText} from "react-icons/fi"
 import { Link } from 'react-router-dom';
 import { forwardRef } from 'react';
 
 import { useUser } from './usercontext';
+
 const Sidebar=forwardRef(({ isOpen, onClose },ref) =>{
   
   const {user}=useUser()
@@ -19,6 +21,7 @@ const Sidebar=forwardRef(({ isOpen, onClose },ref) =>{
     { name: "Department Assignment", to: "/admin/departmentassignment", icon: Building2,visibleTo:["global_admin"] },
     { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["global_admin","Waste Management Manager","Waste Management Supervisor","Logistics Manager"] },
     { name: "App Monitoring", to: "/admin/monitoring", icon: Activity,visibleTo:["global_admin"] },
+    {name:"Issues",to:"/admin/feedback" , icon:AiOutlineWarning}
 
   ];
 
