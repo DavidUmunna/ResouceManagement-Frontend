@@ -16,7 +16,7 @@ import { isProd } from '../../components/env';
 export const Dashboard=({ setLayoutLoading })=>{
     const { user } = useUser();
     const [request,setRequest]=useState()
-    const [orders,setorders]=useState([])
+    const [,setorders]=useState([])
     const [approvedOrders, setApprovedOrders] = useState([]);
     const [pendingOrders, setPendingOrders] = useState([]);
     const [rejectedOrders, setRejectedOrders] = useState([]);

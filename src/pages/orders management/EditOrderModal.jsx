@@ -45,14 +45,13 @@ const EditOrderModal=({Order, Onclose,setOrders,setEditingModalId})=>{
         ))
 
     }
-    const handleRemoveProduct=(index)=>{{
+    const handleRemoveProduct=(index)=>{
 
       setformdata((prev)=>(
         {...prev,
           products:prev.products.filter((_,i)=>i!==index)
         }
         ))
-    }
     }
     const handleAddProduct = () => {
      setformdata((prev) => ({

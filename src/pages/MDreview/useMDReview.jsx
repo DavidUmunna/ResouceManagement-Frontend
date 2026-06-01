@@ -8,9 +8,7 @@ export const useMDReview = (scheduleId) => {
   // Fetch schedule data
  const { 
   data: schedule, 
-  isLoading, 
-  isError,
-  error: queryError 
+  isLoading
 } = useQuery(
   ['schedule', scheduleId],
   async () => {

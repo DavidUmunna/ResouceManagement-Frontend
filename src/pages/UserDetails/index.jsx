@@ -58,7 +58,7 @@ const UserDetails = ({
 
   useEffect(() => {
     setStats(calculateStats(approvedOrders, rejectedOrders, pendingOrders, completedOrders,MoreInformation));
-  }, [approvedOrders, rejectedOrders, pendingOrders, completedOrders]);
+  }, [approvedOrders, rejectedOrders, pendingOrders, completedOrders, MoreInformation]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({

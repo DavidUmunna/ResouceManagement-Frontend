@@ -26,7 +26,7 @@ import ReviewVerification from "../../components/ReviewVerification";
 import { toast } from "react-toastify";
 import { isProd } from "../../components/env";
 import EditOrderModal from "./EditOrderModal";
-import { DeleteConfirmationModal,DeleteButton } from "../../components/DeleteConfirmationModal";
+import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
 
 
 const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error, setError ,RefreshRequest,accRoles, EditingRoles,DeletionRoles}) => {

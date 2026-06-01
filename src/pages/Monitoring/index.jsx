@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
@@ -9,7 +9,7 @@ const MonitoringDashboard = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
         const API = process.env.REACT_APP_API_URL;
       const logsRes = await axios.get(`${API}/api/monitoring?page=${page}&limit=10`);
@@ -22,11 +22,11 @@ const MonitoringDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchData();
-  }, [page]);
+  }, [fetchData]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 mt-10">

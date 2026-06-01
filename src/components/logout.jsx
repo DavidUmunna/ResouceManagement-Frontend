@@ -1,4 +1,3 @@
-/*disable eslint react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useUser } from "./usercontext";
 import { motion } from "framer-motion";
@@ -11,18 +10,17 @@ export default function SignOut({ setAuth }) {
     const [error,setError]=useState(null)
     //const [IsLoading, setIsLoading]=useState(false)
 
-  const clearClientSession = () => {
-    // Clear all client-side auth/session traces used across the app.
-    localStorage.removeItem("sessionId");
-    localStorage.removeItem("user");
-    localStorage.removeItem("auth");
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("sessionId");
-    delete axios.defaults.headers.common.Authorization;
-    delete axios.defaults.headers.common["x-session-id"];
-  };
-
     useEffect(() => {
+        const clearClientSession = () => {
+          localStorage.removeItem("sessionId");
+          localStorage.removeItem("user");
+          localStorage.removeItem("auth");
+          sessionStorage.removeItem("user");
+          sessionStorage.removeItem("sessionId");
+          delete axios.defaults.headers.common.Authorization;
+          delete axios.defaults.headers.common["x-session-id"];
+        };
+
         setAuth(false);
     clearClientSession();
         const logout_backend=async()=>{
@@ -38,7 +36,7 @@ export default function SignOut({ setAuth }) {
                     setUser(null);
                   clearClientSession();
                      
-                }else if(error.response){
+                } else {
                     setError("An Error Occurred")
                 }
             }catch(error){
@@ -67,7 +65,7 @@ export default function SignOut({ setAuth }) {
 
         
          // Delay for smoother transition
-    }, []);
+    }, [setAuth, setUser, user?.userId]);
     if (error){
         return <div className="p-4 flex  justify-center items-end min-h-screen text-red-600 border-l-4 border-red-500 bg-red-200">
               {error}

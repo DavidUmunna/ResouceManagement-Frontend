@@ -5,7 +5,7 @@ import PaginationControls from "../../components/Paginationcontrols";
 import axios from "axios";
 import { useUser } from "../../components/usercontext";
 import { isProd } from '../../components/env';
-import { Trash, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 // RecentActivity Component
 const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
@@ -78,7 +78,7 @@ const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
       try{
         const API_URL = `${process.env.REACT_APP_API_URL}/api`;
         const response= await axios.delete(`${API_URL}/inventory/activities/${activityId}`,{withCredentials:true})
-        if(response.data.success==true){
+        if(response.data.success===true){
           toast.success(response.data.message,{autoClose:1000})
         }
         
@@ -90,7 +90,7 @@ const RecentActivity = ({ refreshFlag, onRefreshComplete }) => {
         
 
       }catch(error){
-        if(error.response?.data.success==false){
+        if(error.response?.data.success===false){
 
           toast.error(error.response?.data.message,{autoClose:1000})
         }

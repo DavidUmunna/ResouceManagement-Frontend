@@ -1,7 +1,7 @@
 import FileTrackList from "./FileTrackList";
 import FileTrackingDashboard from "./Dashboard";
 import ComplianceLog from "./ComplianceLog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import *as Sentry from '@sentry/react'
 const FileTracking=()=>{
@@ -22,9 +22,6 @@ const FileTracking=()=>{
     });
     
 
-    useEffect(()=>{
-        fetchData()
-    },[])
     const formatDate = (date) => {
     if (!date) return "";
     const d = new Date(date);
@@ -33,11 +30,7 @@ const FileTracking=()=>{
 
 
 
-    const fetchData=async(page = data.pagination?.page,
-    limit = data.pagination?.limit ,
-    startDate=formatDate(dateRange.startDate),
-    endDate=formatDate(dateRange.endDate)
-    )=>{
+    const fetchData = useCallback(async (page, limit, startDate, endDate) => {
         try{
             setLoading(true);
     
@@ -83,13 +76,22 @@ const FileTracking=()=>{
         }finally{
             setLoading(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+      fetchData(
+        data.pagination?.page,
+        data.pagination?.limit,
+        formatDate(dateRange.startDate),
+        formatDate(dateRange.endDate)
+      );
+    }, [fetchData, data.pagination?.page, data.pagination?.limit, dateRange.startDate, dateRange.endDate])
     const handlePageChange = (newPage) => {
-      fetchData(newPage, data.pagination?.limit);
+      fetchData(newPage, data.pagination?.limit, formatDate(dateRange.startDate), formatDate(dateRange.endDate));
     };
 
     const handleItemsPerPageChange = (newLimit) => {
-      fetchData(1, newLimit);
+      fetchData(1, newLimit, formatDate(dateRange.startDate), formatDate(dateRange.endDate));
     };
 
 

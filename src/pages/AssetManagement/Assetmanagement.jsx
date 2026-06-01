@@ -222,7 +222,6 @@ const AssetManagement = ({setAuth}) => {
     e.preventDefault();
     try {
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
-      const token = localStorage.getItem("sessionId");
       const res = await axios.put(`${API_URL}/assets/${editingItem._id}`, formData, {
        withCredentials:true
       });

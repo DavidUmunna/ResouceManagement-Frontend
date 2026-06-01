@@ -38,7 +38,7 @@ export const useFeedback = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role, user?.userId]);
   
   const updateStatus = useCallback(async (id, status) => {
     setLoading(true);

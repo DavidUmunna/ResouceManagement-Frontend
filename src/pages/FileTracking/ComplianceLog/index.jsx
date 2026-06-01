@@ -14,7 +14,6 @@ const ComplianceLog = ({ serviceInstance }) => {
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(5);
-  const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState(DEFAULT_SUMMARY);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -31,14 +30,12 @@ const ComplianceLog = ({ serviceInstance }) => {
       const response = await service.fetchLogs({ page: nextPage, limit });
       const entries = response?.data || response?.logs || [];
       setLogs(entries);
-      setTotal(response?.pagination?.total || entries.length);
       setTotalPages(response?.pagination?.totalPages)
       
       setSummary(buildSummary(entries));
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load compliance logs.");
       setLogs([]);
-      setTotal(0);
       setSummary(DEFAULT_SUMMARY);
     } finally {
       setLoading(false);

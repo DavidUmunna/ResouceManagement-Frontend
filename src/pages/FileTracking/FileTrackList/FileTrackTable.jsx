@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiTrash2, FiEdit2,FiDownload } from 'react-icons/fi';
-import {FaFilePdf,FaFile} from "react-icons/fa"
+import {FaFile} from "react-icons/fa"
 const FileTrackTable=({requestSort,filteredItem,setupEdit,DeleteItem,formatStatus, setLoading,Loading})=>{
     return(
         <>

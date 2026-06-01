@@ -5,7 +5,6 @@ import { RequestList } from './RequestList';
 import { CommentInput } from './CommentInput';
 import { ModalFooter } from './Footer';
 import * as Sentry from "@sentry/react"
-import axios from 'axios';
 import { isProd } from '../../components/env';
 import DetailsDisplay from './DetailsDisplay';
 export const MDReviewModal = ({ scheduleId, isOpen, onClose, onComplete }) => {

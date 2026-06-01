@@ -24,7 +24,7 @@ const InventoryLogs = () => {
     Department:""
   });
   const [selectedCategory,setSelectedCategory]=useState("All")
-  const [sortConfig, setSortConfig] = useState({ key: 'lastUpdated', direction: 'desc' });
+  const [sortConfig] = useState({ key: 'lastUpdated', direction: 'desc' });
   const {user}=useUser()
   // Logs state
   const [Error, setError]=useState("")
