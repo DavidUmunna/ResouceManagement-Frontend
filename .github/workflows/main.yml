@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +18,14 @@ jobs:
           node-version: 20
 
       - name: Install & Build
+        env:
+          REACT_APP_API_URL: ${{ vars.REACT_APP_API_URL }}
         run: |
-          npm install
+          if [ -z "$REACT_APP_API_URL" ]; then
+            echo "REACT_APP_API_URL is not set for production environment"
+            exit 1
+          fi
+          npm ci
           npm run build
           
       - name: Enable maintenance & clear old build
