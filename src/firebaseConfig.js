@@ -1,6 +1,6 @@
 import axios from "axios";
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCjULbOigrJFF2uwArhCLlcIINE_aVhJc8",
@@ -12,6 +12,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const rawApiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 
 export let messaging = null;
 
@@ -30,6 +31,10 @@ export async function registerServiceWorker() {
 
 export async function EnableNotifications() {
   try {
+    if (!rawApiUrl) {
+      throw new Error("REACT_APP_API_URL is not configured.");
+    }
+
     const permission = await Notification.requestPermission();
 
     if (permission === "granted") {
@@ -38,7 +43,10 @@ export async function EnableNotifications() {
         messaging = getMessaging(app);
       }
 
-      const registration = await navigator.serviceWorker.getRegistration();
+      let registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (!registration) {
+        registration = await registerServiceWorker();
+      }
 
       const currentToken = await getToken(messaging, {
         vapidKey: "BLb5LA3GmmC9uRCzoYT4t6bapOPqv2-3_Bcch8pCNfK4W49Ylyz1kZ1noALOhns6904Vu7Ma5ZAzN09vOhFJCL0",
@@ -46,9 +54,8 @@ export async function EnableNotifications() {
       });
 
       if (currentToken) {
-        const API_URL = process.env.REACT_APP_API_URL;
         console.log("Token:", currentToken);
-        await axios.post(`${API_URL}/save-token`, { currentToken }, { withCredentials: true });
+        await axios.post(`${rawApiUrl}/api/save-token`, { currentToken }, { withCredentials: true });
         return currentToken;
       } else {
         console.log("No registration token available.");
@@ -60,6 +67,30 @@ export async function EnableNotifications() {
     }
   } catch (error) {
     console.error("Error enabling notifications:", error);
-    
+    return null;
   }
+}
+
+export function subscribeToForegroundMessages(callback) {
+  if (!messaging) {
+    messaging = getMessaging(app);
+  }
+
+  return onMessage(messaging, (payload) => {
+    if (typeof callback === "function") {
+      callback(payload);
+      return;
+    }
+
+    const title = payload?.notification?.title || "New notification";
+    const body = payload?.notification?.body || "You have a new update.";
+
+    if (Notification.permission === "granted") {
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          registration.showNotification(title, { body });
+        }
+      });
+    }
+  });
 }

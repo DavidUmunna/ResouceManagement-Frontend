@@ -11,7 +11,7 @@ import Sidebar from './Sidebar';
 import {fetch_RBAC} from "../services/rbac_service"
 import * as Sentry from "@sentry/react"
 import {FiFileText} from "react-icons/fi"
-import { EnableNotifications } from '../firebaseConfig';
+import { EnableNotifications, subscribeToForegroundMessages } from '../firebaseConfig';
 const navigation = [
   { name: 'Requests', to: '/admin/requestlist', icon: ClipboardDocumentListIcon , hiddenFor:['Visitor']},
   { name: 'Create Request', to: '/admin/createorder', icon: PlusCircleIcon, hiddenFor:['Visitor'] },
@@ -38,6 +38,21 @@ export default function Navbar() {
   const navigate = useNavigate();
   const sidebarRef=useRef(null);
   const [ADMIN_ROLES_GENERAL,set_ADMIN_ROLES_GENERAL]=useState([])
+  const [notificationToast, setNotificationToast] = useState(null);
+
+  const handleEnableNotifications = async () => {
+    try {
+      const token = await EnableNotifications();
+      if (token) {
+        alert("Notifications activated");
+      } else {
+        alert("Notifications were not enabled. Please allow browser permission and try again.");
+      }
+    } catch (error) {
+      console.error("Failed to enable notifications", error);
+      alert("Failed to enable notifications. Please check your connection and try again.");
+    }
+  };
   
 
 
@@ -72,10 +87,45 @@ export default function Navbar() {
         rbac_()
 
     },[user])
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const unsubscribe = subscribeToForegroundMessages((payload) => {
+      const title = payload?.notification?.title || payload?.data?.title || "New notification";
+      const body = payload?.notification?.body || payload?.data?.body || "You have a new update.";
+
+      if (location.pathname !== '/admin/requestlist') {
+        setNotificationToast({ title, body });
+      }
+    });
+
+    return unsubscribe;
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (!notificationToast) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setNotificationToast(null);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [notificationToast]);
     
 
   return (
     <>
+      {notificationToast && (
+        <div className="fixed top-20 right-4 z-[60] max-w-sm rounded-lg border border-blue-200 bg-white px-4 py-3 shadow-lg">
+          <p className="text-sm font-semibold text-blue-900">{notificationToast.title}</p>
+          <p className="mt-1 text-sm text-gray-700">{notificationToast.body}</p>
+        </div>
+      )}
       <Disclosure as="nav" className="bg-gray-800 fixed top-0 left-0 w-full z-20">
         {({ open }) => (
           <>
@@ -130,9 +180,7 @@ export default function Navbar() {
                       type="button"
                       className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none"
                       aria-label="Notifications"
-                      onClick={()=>{
-                        alert("Notifications Activated")
-                        EnableNotifications()}}
+                      onClick={handleEnableNotifications}
                     >
                       <BellIcon className="h-6 w-6" aria-hidden="true" />
                     </button>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { optimizeLogistics } from "../../../services/aiService";
+import { optimizeLogistics } from "../../services/aiService";
 import { toast } from "react-hot-toast";
 
 const OptimizeLogisticsForm = () => {

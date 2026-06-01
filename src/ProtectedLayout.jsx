@@ -11,7 +11,7 @@ import InventoryLogs from "./pages/inventorymanagement/inventory_logs/index";
 import ScheduleEditor from './pages/SchedulingComponents/ScheduleEditor'
 import AppLayout from "./components/AppLayout"
 import FileTracking from "./pages/FileTracking";
-import AiToolsPage from "./pages/FileTracking/Dashboard/AiToolsPage";
+import AiToolsPage from "./pages/AI-tools/AiToolsPage";
 import TendersPage from "./pages/Tenders";
 
 
@@ -25,12 +25,14 @@ const ScheduleManager =React.lazy(()=>import("./pages/SchedulingComponents/Sched
 const DraftSchedules =React.lazy(()=>import('./pages/SchedulingComponents/ScheduleManager/DraftSchedules')) ;
 const FeedbackPage=React.lazy(()=>import("./pages/Feedback"))
 const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
+  const [dashboardIsLoading, setDashboardIsLoading] = React.useState(false);
+
     return (
         
         <Routes>
 
 
-            <Route path="admin" element={<AppLayout/>}>
+      <Route path="admin" element={<AppLayout isLoading={dashboardIsLoading} />}>
 
                       <Route
                         path="usertasks"
@@ -248,7 +250,16 @@ const ProtectedLayout=({isauthenticated,setisauthenticated})=>{
                                             
                     
                       
-                      <Route path="dashboard" element={isauthenticated ? <Dashboard />: <Navigate to="/adminlogin" />} />
+                      <Route
+                        path="dashboard"
+                        element={
+                          isauthenticated ? (
+                            <Dashboard setLayoutLoading={setDashboardIsLoading} />
+                          ) : (
+                            <Navigate to="/adminlogin" />
+                          )
+                        }
+                      />
                       <Route path="*" element={<Navigate to={isauthenticated ? "/dashboard" : "/adminlogin"} />} />
                
         

@@ -13,7 +13,7 @@ import { isProd } from '../../components/env';
 
 
 
-export const Dashboard=()=>{
+export const Dashboard=({ setLayoutLoading })=>{
     const { user } = useUser();
     const [request,setRequest]=useState()
     const [orders,setorders]=useState([])
@@ -24,7 +24,25 @@ export const Dashboard=()=>{
     const [MoreInformation,setMoreInformation]=useState([])
     const [DepartmentalAccess,setDepartmentalAccess]=useState([])
     const [GeneralAccess,setGeneralAccess]=useState([])
-    const [isLoading, setIsLoading]=useState(false)
+    const [isLoading, setIsLoading]=useState(true)
+
+    useEffect(() => {
+      if (typeof setLayoutLoading === "function") {
+        setLayoutLoading(isLoading);
+      }
+    }, [isLoading, setLayoutLoading]);
+
+    useEffect(() => {
+      return () => {
+        if (typeof setLayoutLoading === "function") {
+          setLayoutLoading(false);
+        }
+      };
+    }, [setLayoutLoading]);
+
+    const s = document.createElement('script');
+s.textContent = "console.log('inline-csp-test')";
+document.body.appendChild(s);
 
 
     const rbac_=async()=>{
@@ -41,7 +59,7 @@ export const Dashboard=()=>{
                 window.location.href = '/adminlogin';
               }else if (error.response?.status===401|| error.response?.status===403){
                                      
-                //localStorage.removeItem('sessionId');
+             
                 
                 window.location.href = '/adminlogin'; 
               }else{
@@ -129,15 +147,18 @@ export const Dashboard=()=>{
           
       const init=async()=>{
         try{
-
           setIsLoading(true)
+          //const minDelay = new Promise((resolve) => setTimeout(resolve, 1000));
+
           const rbacData=await rbac_()
           if (rbacData){
             const {GENERAL_ACCESS=[],DEPARTMENTAL_ACCESS=[]}=rbacData
             setDepartmentalAccess(DEPARTMENTAL_ACCESS)
             setGeneralAccess(GENERAL_ACCESS)
-            fetchorder(rbacData);
+            await fetchorder(rbacData);
           }
+
+          //await minDelay; // Ensure the minimum delay has passed
         }catch(error){
           Sentry.captureException(error)
         }finally{

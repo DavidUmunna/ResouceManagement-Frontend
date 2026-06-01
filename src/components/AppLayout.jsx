@@ -2,27 +2,21 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./navBar";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { useEffect,useState } from "react";
+import NavbarSkeleton from "../skeletons/Navbar_skeleton";
+
 import Footer from "./Footer/footer";
 
-function AppLayout() {
+function AppLayout({ isLoading = false }) {
   const location = useLocation();
-   const [isReady, setIsReady] = useState(false);
-   useEffect(() => {
-    if (document.readyState === "complete") {
-      setIsReady(true);
-    } else {
-      window.addEventListener("load", () => setIsReady(true));
-    }
-  }, []);
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Persistent Navbar */}
-      <Navbar />
+      {isLoading ? <NavbarSkeleton /> : <Navbar />}
       
       {/* Animated content area */}
       <main className="flex-1 relative">
-        {isReady&&(<motion.div
+        <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -34,9 +28,9 @@ function AppLayout() {
           className="relative "
         >
           <Outlet />
-        </motion.div>)}
+        </motion.div>
       </main>
-      <Footer/>
+       {!isLoading && <Footer />}
     </div>
   );
 }

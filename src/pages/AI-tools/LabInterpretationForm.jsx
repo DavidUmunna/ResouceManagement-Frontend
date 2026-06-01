@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { predictMaintenance } from "../../../services/aiService";
+import { interpretLabResults } from "../../services/aiService";
 import { toast } from "react-hot-toast";
 
-const PredictiveMaintenanceForm = () => {
+const LabInterpretationForm = () => {
   const [formData, setFormData] = useState({
-    equipmentType: "",
-    runtime: "",
-    vibration: "",
-    temperature: "",
-    lastService: "",
-    flow: "",
+    sampleType: "",
+    cod: "",
+    bod: "",
+    tss: "",
+    metals: "",
+    ph: "",
+    limitSource: "",
     notes: "",
   });
   const [loading, setLoading] = useState(false);
@@ -27,11 +28,11 @@ const PredictiveMaintenanceForm = () => {
     setError("");
     setResult(null);
     try {
-      const response = await predictMaintenance(formData);
+      const response = await interpretLabResults(formData);
       setResult(response);
       toast.success("AI analysis complete");
     } catch (err) {
-      const message = err.message || "Failed to get prediction.";
+      const message = err.message || "Failed to interpret lab results.";
       setError(message);
       toast.error(`AI error: ${message}`);
     } finally {
@@ -44,7 +45,7 @@ const PredictiveMaintenanceForm = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-gray-500 uppercase tracking-wide">AI Assistant</p>
-          <h2 className="text-lg font-semibold text-gray-800">Predictive Maintenance</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Lab Interpretation</h2>
         </div>
         {loading && (
           <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500" />
@@ -60,60 +61,68 @@ const PredictiveMaintenanceForm = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Equipment Type"
-            name="equipmentType"
-            value={formData.equipmentType}
+            label="Sample Type"
+            name="sampleType"
+            value={formData.sampleType}
             onChange={handleChange}
-            placeholder="e.g., Pump, Conveyor"
+            placeholder="e.g., Effluent, Sludge"
             required
           />
           <Input
-            label="Runtime (hours)"
-            name="runtime"
-            value={formData.runtime}
-            onChange={handleChange}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="e.g., 1200"
-            required
-          />
-          <Input
-            label="Vibration (mm/s)"
-            name="vibration"
-            value={formData.vibration}
+            label="COD (mg/L)"
+            name="cod"
+            value={formData.cod}
             onChange={handleChange}
             type="number"
             step="0.01"
-            placeholder="e.g., 3.5"
+            placeholder="e.g., 150"
             required
           />
           <Input
-            label="Temperature (°C)"
-            name="temperature"
-            value={formData.temperature}
-            onChange={handleChange}
-            type="number"
-            step="0.1"
-            placeholder="e.g., 75"
-            required
-          />
-          <Input
-            label="Last Service Date"
-            name="lastService"
-            value={formData.lastService}
-            onChange={handleChange}
-            type="date"
-            required
-          />
-          <Input
-            label="Flow Rate"
-            name="flow"
-            value={formData.flow}
+            label="BOD (mg/L)"
+            name="bod"
+            value={formData.bod}
             onChange={handleChange}
             type="number"
             step="0.01"
-            placeholder="e.g., 45.2"
+            placeholder="e.g., 80"
+            required
+          />
+          <Input
+            label="TSS (mg/L)"
+            name="tss"
+            value={formData.tss}
+            onChange={handleChange}
+            type="number"
+            step="0.01"
+            placeholder="e.g., 60"
+            required
+          />
+          <Input
+            label="Metals (mg/L)"
+            name="metals"
+            value={formData.metals}
+            onChange={handleChange}
+            type="text"
+            placeholder="e.g., Pb:0.05, Hg:0.01"
+          />
+          <Input
+            label="pH"
+            name="ph"
+            value={formData.ph}
+            onChange={handleChange}
+            type="number"
+            step="0.01"
+            placeholder="e.g., 7.2"
+            required
+          />
+          <Input
+            label="Limit Source"
+            name="limitSource"
+            value={formData.limitSource}
+            onChange={handleChange}
+            type="text"
+            placeholder="e.g., WHO, EPA, Local"
             required
           />
         </div>
@@ -126,7 +135,7 @@ const PredictiveMaintenanceForm = () => {
             onChange={handleChange}
             rows="3"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            placeholder="Add context such as anomalies, location, or recent changes."
+            placeholder="Add context such as sampling location, time, or anomalies."
           />
         </div>
 
@@ -136,19 +145,20 @@ const PredictiveMaintenanceForm = () => {
             disabled={loading}
             className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
           >
-            {loading ? "Predicting..." : "Run Prediction"}
+            {loading ? "Analyzing..." : "Interpret Results"}
           </button>
           <button
             type="button"
             disabled={loading}
             onClick={() => {
               setFormData({
-                equipmentType: "",
-                runtime: "",
-                vibration: "",
-                temperature: "",
-                lastService: "",
-                flow: "",
+                sampleType: "",
+                cod: "",
+                bod: "",
+                tss: "",
+                metals: "",
+                ph: "",
+                limitSource: "",
                 notes: "",
               });
               setResult(null);
@@ -161,14 +171,16 @@ const PredictiveMaintenanceForm = () => {
         </div>
       </form>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">Results</h3>
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-gray-200 rounded-lg p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Gemini Results</h3>
         {result ? (
-          <pre className="text-xs text-gray-800 whitespace-pre-wrap break-words bg-white border border-gray-200 rounded-md p-3">
+          <div className="bg-white border border-gray-200 rounded-md p-3 text-sm text-gray-800 shadow-inner">
+            <pre className="whitespace-pre-wrap break-words text-xs">
 {JSON.stringify(result, null, 2)}
-          </pre>
+            </pre>
+          </div>
         ) : (
-          <p className="text-sm text-gray-500">Run a prediction to see results here.</p>
+          <p className="text-sm text-gray-500">Submit lab values to see AI interpretation.</p>
         )}
       </div>
     </div>
@@ -185,4 +197,4 @@ const Input = ({ label, ...props }) => (
   </div>
 );
 
-export default PredictiveMaintenanceForm;
+export default LabInterpretationForm;

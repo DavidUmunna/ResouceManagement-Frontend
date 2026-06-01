@@ -34,14 +34,8 @@ const App = () => {
       });
     }
     if(isauthenticated){
-
       check_csrf()
     }
-    const Timer =setInterval(()=>{
-      check_csrf()
-      
-    },15*60*1000)
-    return () => clearInterval(Timer)
     
   }, [isauthenticated]);
 
@@ -61,7 +55,7 @@ const App = () => {
           },
           withCredentials: true, // Not inside headers
         });
-    
+       
         setisauthenticated(response.data.authenticated);
       } catch (error) {
         setisauthenticated(false);

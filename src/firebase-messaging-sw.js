@@ -15,10 +15,34 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   console.log("Received background message ", payload);
-  const notificationTitle = payload.notification.title;
+  const orderId = payload?.data?.orderId;
+  const targetPath = payload?.data?.url || (orderId ? `/admin/requestlist#order-${orderId}` : '/admin/requestlist');
+  const notificationTitle = payload?.notification?.title || payload?.data?.title || 'New notification';
   const notificationOptions = {
-    body: payload.notification.body,
-   
+    body: payload?.notification?.body || payload?.data?.body || 'You have a new update.',
+    data: {
+      url: targetPath,
+      orderId: orderId || ''
+    }
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const notificationUrl = event.notification?.data?.url || '/admin/requestlist';
+  const targetUrl = new URL(notificationUrl, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.startsWith(self.location.origin)) {
+          return client.focus().then(() => client.navigate(targetUrl));
+        }
+      }
+
+      return clients.openWindow(targetUrl);
+    })
+  );
 });

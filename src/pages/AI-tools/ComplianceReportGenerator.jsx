@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { generateReport } from "../../../services/aiService";
+import { generateReport } from "../../services/aiService";
 import { toast } from "react-hot-toast";
 
 const ComplianceReportGenerator = () => {
