@@ -20,6 +20,18 @@ jobs:
         run: |
           npm install
           npm run build
+          
+      - name: Enable maintenance & clear old build
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 194.163.137.35
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            touch /var/www/erp.haldengroup.ng/maintenance.flag
+            sudo systemctl restart nginx
+            rm -rf /var/www/erp.haldengroup.ng/build
 
       - name: Copy build to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -39,15 +51,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            # Enable maintenance mode
-            touch /var/www/erp.haldengroup.ng/maintenance.flag
-            sudo systemctl restart nginx
-
-            # Set up admin folder
             mkdir -p /var/www/erp.haldengroup.ng/build/admin
-            cp -r /var/www/erp.haldengroup.ng/build/static /var/www/erp.haldengroup.ng/build/admin/static
+            cp -r /var/www/erp.haldengroup.ng/build/static /var/www/erp.haldengroup.ng/build/admin/
             cp /var/www/erp.haldengroup.ng/build/haldenlogo_1.png /var/www/erp.haldengroup.ng/build/admin/haldenlogo_1.png
-
-            # Disable maintenance mode
             rm /var/www/erp.haldengroup.ng/maintenance.flag
             sudo systemctl restart nginx
