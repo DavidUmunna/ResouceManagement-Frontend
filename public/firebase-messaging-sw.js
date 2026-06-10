@@ -13,7 +13,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
-	console.log('Received background message ', payload);
+	
 	const orderId = payload?.data?.orderId;
 	const targetPath = payload?.data?.url || (orderId ? `/admin/requestlist#order-${orderId}` : '/admin/requestlist');
 	const notificationTitle = payload?.notification?.title || payload?.data?.title || 'New notification';

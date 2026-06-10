@@ -20,7 +20,7 @@ export let messaging = null;
 export async function registerServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log('Service worker registered');
+
     messaging = getMessaging(app);
     return registration;
   } catch (error) {
