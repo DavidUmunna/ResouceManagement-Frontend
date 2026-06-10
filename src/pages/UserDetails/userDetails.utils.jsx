@@ -20,7 +20,15 @@ export const getInitials = (name) => {
 export const calculateStats = (approved, rejected, pending, completed,MoreInformation) => {
   const total = approved.length + rejected.length + pending.length + completed.length+MoreInformation.length;
   const rate = total > 0 ? Math.round((approved.length / total) * 100) : 0;
-  
+  console.log("Approved Orders:", approved);
+  approved.forEach(order => {
+  console.log({
+    createdAt: order.createdAt,
+    Approvals: order.Approvals?.length,
+    lastTimestamp: order.Approvals?.[order.Approvals.length-1]?.timestamp,
+    diff: new Date(order.Approvals?.[order.Approvals.length-1]?.timestamp) - new Date(order.createdAt)
+  })
+  })
   const avgProcessingTime = approved.reduce((sum, order) => {
     if (!order.createdAt || !order.Approvals?.length) return sum;
     const created = new Date(order.createdAt);

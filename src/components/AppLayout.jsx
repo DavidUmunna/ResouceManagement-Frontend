@@ -3,16 +3,22 @@ import Navbar from "./navBar";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import NavbarSkeleton from "../skeletons/Navbar_skeleton";
-
+import { useUser } from "./usercontext";
 import Footer from "./Footer/footer";
 
 function AppLayout({ isLoading = false }) {
   const location = useLocation();
+  const user=useUser();
 
   return (
     <div className="flex min-h-screen flex-col">
       {/* Persistent Navbar */}
-      {isLoading ? <NavbarSkeleton /> : <Navbar />}
+      {isLoading ? <NavbarSkeleton /> : 
+      user &&(
+
+        <Navbar />
+      )
+      }
       
       {/* Animated content area */}
       <main className="flex-1 relative">

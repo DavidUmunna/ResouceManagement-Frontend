@@ -82,7 +82,7 @@ document.body.appendChild(s);
                 
                     const API_URL = `${process.env.REACT_APP_API_URL}/api`
                  
-                    const userReq=await axios.get(`${API_URL}/orders/DailyRequests`,{
+                    const userReq=await axios.get(`${API_URL}/orders/monthlyrequests`,{
                       withCredentials:true})
                      
                       response=userReq.data.data
@@ -90,7 +90,7 @@ document.body.appendChild(s);
                       if (!user?.Department) return;
                       const API_URL = `${process.env.REACT_APP_API_URL}/api`
                       
-                      const userReq=await axios.get(`${API_URL}/orders/DailyRequests`,{params: {
+                      const userReq=await axios.get(`${API_URL}/orders/monthlyrequests`,{params: {
                         Department: user.Department,
                       },withCredentials:true})
                       
@@ -188,15 +188,16 @@ document.body.appendChild(s);
     return(
       <>
       {isLoading ? (<UserDetailsSkeleton/>):(
+        user &&
 
         
-        <motion.div
+        (<motion.div
         initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
          className=" min-h-screen bg-gray-300  mt-16">     
              
-            <h1 className="text-3xl font-bold text-gray-800">Welcome {user?.name.split(" ")[1]}</h1>
+            <h1 className="text-3xl font-bold text-gray-800">Welcome {user?.name.split(" ").slice(-1)[0]}</h1>
             <p className="text-gray-600 mt-2">Manage your Requests efficiently.</p>
             <UserDetails user={user}   rejectedOrders={rejectedOrders||[]} request_amount={request_amount} 
             approvedOrders={approvedOrders||[]} pendingOrders={pendingOrders||[]} completedOrders={completedOrders||[]}
@@ -204,7 +205,7 @@ document.body.appendChild(s);
             />
 
             
-            </motion.div>
+            </motion.div>)
           )
           }
           </>
