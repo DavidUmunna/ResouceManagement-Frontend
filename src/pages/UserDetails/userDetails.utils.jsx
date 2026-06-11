@@ -20,7 +20,7 @@ export const getInitials = (name) => {
 export const calculateStats = (approved, rejected, pending, completed,MoreInformation) => {
   const total = approved.length + rejected.length + pending.length + completed.length+MoreInformation.length;
   const rate = total > 0 ? Math.round((approved.length / total) * 100) : 0;
-  console.log("Approved Orders:", approved);
+ 
   approved.forEach(order => {
  
   })

@@ -93,15 +93,24 @@ const StatusTooltip = ({ active, payload, label }) => {
   );
 };
 
+function currentMonthRange() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const last  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  return { first, last };
+}
+
 export default function POAnalyticsPage() {
+  const { first: monthStart, last: monthEnd } = currentMonthRange();
+
   const [loading, setLoading] = useState(true);
   const [summary, setSummary]           = useState(null);
   const [byDept, setByDept]             = useState([]);
   const [byStatus, setByStatus]         = useState([]);
-  const [startDate, setStartDate]       = useState('');
-  const [endDate, setEndDate]           = useState('');
-  const [pendingStart, setPendingStart] = useState('');
-  const [pendingEnd, setPendingEnd]     = useState('');
+  const [startDate, setStartDate]       = useState(monthStart);
+  const [endDate, setEndDate]           = useState(monthEnd);
+  const [pendingStart, setPendingStart] = useState(monthStart);
+  const [pendingEnd, setPendingEnd]     = useState(monthEnd);
   const [showInfo, setShowInfo]         = useState(false);
 
   const load = useCallback(async (sd, ed) => {
@@ -128,7 +137,8 @@ export default function POAnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    load('', '');
+    load(monthStart, monthEnd);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [load]);
 
   const handleApply = (e) => {
@@ -139,11 +149,11 @@ export default function POAnalyticsPage() {
   };
 
   const handleReset = () => {
-    setPendingStart('');
-    setPendingEnd('');
-    setStartDate('');
-    setEndDate('');
-    load('', '');
+    setPendingStart(monthStart);
+    setPendingEnd(monthEnd);
+    setStartDate(monthStart);
+    setEndDate(monthEnd);
+    load(monthStart, monthEnd);
   };
 
   const totals = summary?.totals ?? { totalOrders: 0, totalSpend: 0, avgOrderValue: 0 };
@@ -170,7 +180,9 @@ export default function POAnalyticsPage() {
             Spend breakdown by department and approval status
             {(startDate || endDate) && (
               <span className="ml-2 text-blue-600 font-medium">
-                · {startDate || '…'} → {endDate || '…'}
+                · {startDate === monthStart && endDate === monthEnd
+                  ? 'This month'
+                  : `${startDate || '…'} → ${endDate || '…'}`}
               </span>
             )}
           </p>

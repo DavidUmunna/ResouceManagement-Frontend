@@ -41,7 +41,7 @@ export const Dashboard=({ setLayoutLoading })=>{
     }, [setLayoutLoading]);
 
     const s = document.createElement('script');
-s.textContent = "console.log('inline-csp-test')";
+
 document.body.appendChild(s);
 
 

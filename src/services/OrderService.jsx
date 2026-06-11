@@ -157,6 +157,15 @@ export const deleteOrder = async (orderId) => {
   }
 };
 
+export const escalateOrder = async (orderId) => {
+  const response = await axios.put(
+    `${API_URL}/${orders}/${orderId}/escalate`,
+    {},
+    { withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  return response.data;
+};
+
 export const getSpendByDepartment = async (params = {}) => {
   const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/by-department`, {
     params,

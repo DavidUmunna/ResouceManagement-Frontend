@@ -6,7 +6,8 @@ import {
   updateOrderStatus,
   deleteOrder,
   downloadFile,
-  
+  escalateOrder,
+
 } from "../../services/OrderService";
 import SignatureModal from "../../components/SignatureModal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -398,6 +399,19 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     setDeleteModalOpen(true);
   }
 
+  const handleEscalate = async (e, order) => {
+    e.stopPropagation();
+    try {
+      const { escalated } = await escalateOrder(order._id);
+      setOrders(prev =>
+        prev.map(o => o._id === order._id ? { ...o, escalated } : o)
+      );
+      toast.success(escalated ? 'Order escalated — approvers have been notified' : 'Escalation removed');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to escalate order');
+    }
+  };
+
   
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -652,9 +666,9 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           <p className="text-gray-600">{order.remarks}</p>
         </div>
       )}
-      <div className="flex  justify-between">
+      <div className="flex  justify-between flex-wrap gap-2">
 
-        {(accRoles?.includes(user.Department))&&(<button 
+        {(accRoles?.includes(user.Department))&&(<button
           onClick={() => {
             setSelectedRequest(prev => prev === order ? null : order)
             setIsExportOpen(true)
@@ -777,13 +791,21 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     >
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
                             <h3 className="text-lg font-semibold text-gray-800 ">
                               {(order.Title || "Untitled Order").length > 40
                                ? (order.Title || "Untitled Order").slice(0, 40) + "..."
                                : order.Title || "Untitled Order"}
                             </h3>
                             {getStatusBadge(order)}
+                            {order.escalated && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Escalated
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-gray-500 mt-1">
                             #{order.orderNumber} • {order.orderedBy}
@@ -794,7 +816,32 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                           <div className="flex items-center text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </div>
-      
+
+                          {(() => {
+                            const isOwner =
+                              (user.email && order.staff?.email === user.email) ||
+                              (user.userId && order.staff?._id?.toString() === user.userId.toString()) ||
+                              (user.userId && String(order.staff) === String(user.userId));
+                            console.log("owner", isOwner);
+                            return isOwner && order.status === 'Pending';
+                          })() && (
+                            <button
+                              onClick={(e) => handleEscalate(e, order)}
+                              title={order.escalated ? 'Remove escalation' : 'Escalate this order'}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                order.escalated
+                                  ? 'bg-orange-100 text-orange-700 border border-orange-300 hover:bg-orange-200'
+                                  : 'bg-orange-500 text-white hover:bg-orange-600'
+                              }`}
+                            >
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              {order.escalated ? 'Escalated' : 'Escalate'}
+                            </button>
+                          )}
+                          
+
                           {order.filenames?.length > 0 && (
                             <div className="flex justify-between">
 
