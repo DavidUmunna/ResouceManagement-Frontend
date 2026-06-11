@@ -1,51 +1,49 @@
-import {  PlusSquare,History, FileSearch, Truck, Building2, Briefcase,Activity, Brain } from 'lucide-react';
-import {AiOutlineWarning} from "react-icons/ai"
-import {FiFileText} from "react-icons/fi"
+import { PlusSquare, History, FileSearch, Truck, Building2, Briefcase, Activity, Brain, CalendarDays, ShieldCheck, BarChart2, TrendingUp } from 'lucide-react';
+import { AiOutlineWarning } from 'react-icons/ai';
+import { FiFileText } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { forwardRef } from 'react';
-
 import { useUser } from './usercontext';
+import { ROUTE_ROLES as R } from '../constants/roles';
 
-const Sidebar=forwardRef(({ isOpen, onClose },ref) =>{
-  
-  const {user}=useUser()
-  const sidebar = [
-    //{ name: "Inventory", to: "/#", icon: Boxes,visibleTo: ["procurement_officer","human_resources","internal_auditor","admin","global_admin"]  },
-    { name: "Assets Management", to: "/admin/assetsmanagement", icon: Briefcase,visibleTo: ["procurement_officer","human_resources","global_admin","Accountant","Financial_manager" ] },
-    { name: "Vendor", to: "/admin/supplierlist", icon: Truck,visibleTo:["procurement_officer",'global_admin',"internal_auditor"] },
-    { name:"Inventory management" ,to:"/admin/inventorymanagement", icon:PlusSquare, visibleTo: ["procurement_officer","admin","human_resources","global_admin","Environmental_lab_manager","lab_supervisor","QHSE Coordinator"] },
-    { name:"Inventory logs" ,to:"/admin/inventorylogs", icon:History, visibleTo: ["global_admin","admin","QHSE Coordinator","lab_supervisor","procurement_officer","Environmental_lab_manager"] },
-    { name:"Tenders" ,to:"/admin/tenders", icon:Briefcase, visibleTo:["global_admin"]},
-    { name:"File Tracking", to:"/admin/filetracking",icon:FileSearch, visibleTo:["Contracts_manager","global_admin"]},
-    { name:"AI Tools", to:"/admin/ai-tools", icon:Brain, visibleTo:["global_admin"]},
-    { name: "Department Assignment", to: "/admin/departmentassignment", icon: Building2,visibleTo:["global_admin"] },
-    { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["global_admin","Waste Management Manager","Waste Management Supervisor","Logistics Manager"] },
-    { name: "App Monitoring", to: "/admin/monitoring", icon: Activity,visibleTo:["global_admin"] },
-    {name:"Issues",to:"/admin/feedback" , icon:AiOutlineWarning}
+const NAV_ITEMS = [
+  { name: 'Assets Management',    to: '/admin/assetsmanagement',    icon: Briefcase,        visibleTo: R.assetsmanagement },
+  { name: 'Vendor',               to: '/admin/supplierlist',        icon: Truck,            visibleTo: R.supplierlist },
+  { name: 'Inventory management', to: '/admin/inventorymanagement', icon: PlusSquare,       visibleTo: R.inventorymanagement },
+  { name: 'Inventory logs',       to: '/admin/inventorylogs',       icon: History,          visibleTo: R.inventorylogs },
+  { name: 'Tenders',              to: '/admin/tenders',             icon: Briefcase,        visibleTo: R.tenders },
+  { name: 'File Tracking',        to: '/admin/filetracking',        icon: FileSearch,       visibleTo: R.filetracking },
+  { name: 'AI Tools',             to: '/admin/ai-tools',            icon: Brain,            visibleTo: R['ai-tools'] },
+  { name: 'Department Assignment',to: '/admin/departmentassignment',icon: Building2,        visibleTo: R.departmentassignment },
+  { name: 'Skips Tracking',       to: '/admin/skipstracking',       icon: FiFileText,       visibleTo: R.skipstracking },
+  { name: 'App Monitoring',       to: '/admin/monitoring',          icon: Activity,         visibleTo: R.monitoring },
+  { name: 'Issues',               to: '/admin/feedback',            icon: AiOutlineWarning },
+  { name: 'My Leave',             to: '/admin/leave',               icon: CalendarDays },
+  { name: 'Leave Admin',          to: '/admin/leave-admin',         icon: ShieldCheck,      visibleTo: R['leave-admin'] },
+  { name: 'Leave Summary',        to: '/admin/leave-summary',       icon: BarChart2,        visibleTo: R['leave-summary'] },
+  { name: 'PO Analytics',         to: '/admin/po-analytics',        icon: TrendingUp,       visibleTo: R['po-analytics'] },
+];
 
-  ];
+const Sidebar = forwardRef(({ isOpen, onClose }, ref) => {
+  const { user } = useUser();
+
+  const visibleItems = NAV_ITEMS.filter(item =>
+    !item.visibleTo || item.visibleTo.includes(user?.role)
+  );
 
   return (
     <div
-      ref={ref} 
+      ref={ref}
       className={`fixed top-16 left-0 h-[calc(100%-4rem)] w-64 bg-gray-800 text-white z-20 shadow-xl
-      transform transition-all duration-300 ease-in-out
-      ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}
-      `}
+        transform transition-all duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-700">
         <h2 className="text-xl font-semibold tracking-wide">Utilities</h2>
       </div>
 
       <nav className="flex flex-col gap-2 p-4">
-        {sidebar.filter(item => {
-                          // If `visibleTo` exists, check if user has permission
-                          if (item.visibleTo) {
-                            return item.visibleTo.includes(user?.role);
-                          }
-                          // If no restriction, show it to everyone
-                          return true;
-                        }).map((item) => (
+        {visibleItems.map((item) => (
           <Link
             to={item.to}
             key={item.name}
@@ -61,5 +59,4 @@ const Sidebar=forwardRef(({ isOpen, onClose },ref) =>{
   );
 });
 
-
-export default Sidebar
+export default Sidebar;

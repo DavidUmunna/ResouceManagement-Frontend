@@ -10,6 +10,42 @@ import {toast} from "react-toastify"
 import PaginationControls from '../../components/Paginationcontrols';
 import { isProd } from "../../components/env";
 import AssetExportModal from "./AssetExport";
+import InfoModal from "../../components/InfoModal";
+
+const ASSET_INSTRUCTIONS = [
+  {
+    heading: 'Viewing Assets',
+    items: [
+      'All assets are listed in the table. Click the chevron on a row to expand it and see the SKU, location, and description.',
+      'Use the search box to filter by name, description, condition, or location.',
+      'Use the category dropdown to narrow the list to a specific asset category.',
+      'Click any column header to sort the table by that field.',
+    ],
+  },
+  {
+    heading: 'Adding & Editing Assets',
+    items: [
+      'Click "Add Asset Item" to open the form and register a new asset.',
+      'Fill in the name, category, quantity, monetary value, condition, location, and an optional description.',
+      'To update an existing asset, click the edit (pencil) icon on its row — the same form reopens pre-filled.',
+      'Click "Save Item" / "Update Item" to confirm, or "Cancel" to discard changes.',
+    ],
+  },
+  {
+    heading: 'Deleting & Exporting',
+    items: [
+      'Click the delete (trash) icon on a row to permanently remove that asset.',
+      'Use the "Excel Export" button to download asset data as a spreadsheet.',
+    ],
+  },
+  {
+    heading: 'Analytics (Admin)',
+    items: [
+      'The charts on the right show a category breakdown and condition distribution of your assets.',
+      'These panels are only visible to users with admin-level access.',
+    ],
+  },
+];
 
 const AssetManagement = ({setAuth}) => {
   const { user } = useUser();
@@ -44,6 +80,7 @@ const AssetManagement = ({setAuth}) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [showmodal,setshowmodal]=useState(false)
+  const [showInfo,setShowInfo]=useState(false)
   const [ADMIN_ROLES_ASSET_MANAGEMENT,set_ADMIN_ROLES_ASSET_MANAGEMENT]=useState([])
   const [Error,setError]=useState("")
 
@@ -296,7 +333,24 @@ const AssetManagement = ({setAuth}) => {
   return (
     <div className="w-full p-6 bg-gray-50 rounded-lg shadow-sm mt-12">
       {/* Header and Controls */}
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Asset Management</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Asset Management</h1>
+        <button
+          onClick={() => setShowInfo(true)}
+          className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-blue-300 text-blue-500 hover:bg-blue-50 hover:border-blue-400 transition flex items-center justify-center text-sm font-bold"
+          aria-label="How to use this page"
+        >
+          i
+        </button>
+      </div>
+
+      {showInfo && (
+        <InfoModal
+          title="How to use Asset Management"
+          sections={ASSET_INSTRUCTIONS}
+          onClose={() => setShowInfo(false)}
+        />
+      )}
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">

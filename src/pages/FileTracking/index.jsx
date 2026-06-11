@@ -3,8 +3,37 @@ import FileTrackingDashboard from "./Dashboard";
 import ComplianceLog from "./ComplianceLog";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import *as Sentry from '@sentry/react'
+import * as Sentry from '@sentry/react';
+import InfoModal from "../../components/InfoModal";
+
+const FILE_TRACKING_INSTRUCTIONS = [
+  {
+    heading: 'File Track List',
+    items: [
+      'The centre panel lists all tracked files. Use the search bar to filter by file name, issuer, or recipient.',
+      'Filter by date range to narrow down files by their issue or expiry date.',
+      'Click "Add Track" to log a new file — fill in the file name, issuer, recipient, and expiry date.',
+      'Edit or delete an existing entry using the action buttons on each row.',
+    ],
+  },
+  {
+    heading: 'Compliance Log',
+    items: [
+      'The left panel shows files approaching or past their expiry date.',
+      'Entries highlighted in red are overdue; amber entries expire soon.',
+      'Review this panel regularly to ensure no compliance deadlines are missed.',
+    ],
+  },
+  {
+    heading: 'Dashboard',
+    items: [
+      'The right panel gives a quick summary of total files, active files, and upcoming expirations.',
+      'Use it to get an at-a-glance status of your document compliance health.',
+    ],
+  },
+];
 const FileTracking=()=>{
+    const [showInfo, setShowInfo] = useState(false);
     const [data, setData] = useState({
             Tracks: [],
             pagination: {
@@ -98,6 +127,25 @@ const FileTracking=()=>{
     return(
         <>
         <div className="max-w-full mx-auto px-2 sm:px-6  py-6 mb-20 pt-16">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-bold text-gray-800">File Tracking</h1>
+              <button
+                onClick={() => setShowInfo(true)}
+                className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-blue-300 text-blue-500 hover:bg-blue-50 hover:border-blue-400 transition flex items-center justify-center text-sm font-bold"
+                aria-label="How to use this page"
+              >
+                i
+              </button>
+            </div>
+
+            {showInfo && (
+              <InfoModal
+                title="How to use File Tracking"
+                sections={FILE_TRACKING_INSTRUCTIONS}
+                onClose={() => setShowInfo(false)}
+              />
+            )}
+
             <div className="flex flex-col lg:flex-row gap-3">
             <div className="w-full lg:w-1/4 bg-gray-50">
               <ComplianceLog />

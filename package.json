@@ -126,6 +126,7 @@
     },
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "\\.(png|jpg|jpeg|gif|svg|webp|ico)$": "<rootDir>/__mocks__/fileMock.js",
       "^axios$": "<rootDir>/__mocks__/axios.js",
       "^react-router-dom$": "<rootDir>/__mocks__/react-router-dom.js"
     },

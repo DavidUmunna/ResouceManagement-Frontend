@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import * as Sentry from '@sentry/react'
 import { isProd } from "./components/env";
@@ -7,7 +7,7 @@ import Logout from "./components/logout";
 import Adminlogin from "./pages/admin_login";
 import axios from "axios"
 import ForgotPassword from "./pages/forgotpassword";
-import Landingpage from "./pages/landinpage/Resourcelanding" 
+import Landingpage from "./pages/landinpage/Resourcelanding"
 import Aboutus from "./pages/landinpage/Aboutus/main";
 import Layout from "./pages/landinpage/layout/Layout"
 import PrivateRoute from "./pages/PrivateRoute";
@@ -16,11 +16,22 @@ import ResetPassword from "./pages/ResetPassword";
 import CompanyDataForm from "./pages/landinpage/CompanyData";
 import { ToastContainer } from 'react-toastify';
 import SubscriptionPage from "./pages/landinpage/Subscription";
+import { setupSessionInterceptor } from "./services/sessionInterceptor";
 // Pagetransition animation
 
 const App = () => {
   const location = useLocation();
   const [isauthenticated, setisauthenticated] = useState(false);
+  const isAuthRef = useRef(isauthenticated);
+
+  useEffect(() => { isAuthRef.current = isauthenticated; }, [isauthenticated]);
+
+  useEffect(() => {
+    return setupSessionInterceptor(
+      () => isAuthRef.current,
+      setisauthenticated
+    );
+  }, []);
  
   
   useEffect(() => {

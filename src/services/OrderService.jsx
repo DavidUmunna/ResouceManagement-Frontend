@@ -153,8 +153,35 @@ export const deleteOrder = async (orderId) => {
       Sentry.captureMessage("Error deleting  orders")
       Sentry.captureException(error)
     }
-    
+
   }
+};
+
+export const getSpendByDepartment = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/by-department`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
+};
+
+export const getSpendByStatus = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/by-status`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
+};
+
+export const getSpendSummary = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/spend-summary`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
 };
 
 

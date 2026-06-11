@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/admin/ResouceManagement-Backend -type f | sort)",
+      "Read(//Users/admin/**)",
+      "Bash(npm test *)",
+      "Bash(npx jest *)",
+      "Bash(npx eslint *)",
+      "Bash(npx react-scripts *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('jest',{}\\), indent=2\\)\\)\")",
+      "Bash(REACT_APP_API_URL=http://localhost:5000 npx jest test/LeaveSummaryPage.test.jsx --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest test/LeaveSummaryPage.test.jsx --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest test/leaveService.test.js --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx react-scripts build)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest test/AdminLeavePanel.test.jsx --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest test/LeavePage.test.jsx --no-coverage)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx eslint src --ext .js,.jsx --rule '{\"no-unused-vars\":\"warn\"}' --no-eslintrc)",
+      "Bash(REACT_APP_API_URL=http://localhost:3001 npx eslint src --ext .js,.jsx)"
+    ]
+  }
+}

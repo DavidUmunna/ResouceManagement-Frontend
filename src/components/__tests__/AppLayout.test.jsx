@@ -22,6 +22,10 @@ jest.mock("framer-motion", () => ({
   },
 }));
 
+jest.mock("../usercontext", () => ({
+  useUser: jest.fn(() => ({ name: "Test User", role: "admin" })),
+}));
+
 const mockedUseLocation = useLocation;
 let mockedLocation = { pathname: "/", search: "" };
 

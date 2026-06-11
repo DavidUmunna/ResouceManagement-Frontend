@@ -11,6 +11,7 @@ node_modules/
 /coverage
 src/__tests__
 __mocks__
+/test
 
 
 # production
