@@ -22,7 +22,8 @@
     "additionalDirectories": [
       "/Users/admin/ResourceManagement-backend/services",
       "/Users/admin/ResourceManagement-backend/controllers/v2.controllers",
-      "/Users/admin/ResourceManagement-backend/routes/v2"
+      "/Users/admin/ResourceManagement-backend/routes/v2",
+      "/Users/admin/ResourceManagement-backend/routes/v1"
     ]
   }
 }

@@ -10,23 +10,22 @@ const route="users"
 
 
 
-export const get_users=async ()=>{
-    try{
-        const response = await axios.get(`${API_URL}/${route}`,{headers:{ "ngrok-skip-browser-warning": "true",}});
-        
-        return response.data;
-
-    }catch (error){
-      if(isProd){
-
-        Sentry.captureMessage("Error fetching users")
-        Sentry.captureException(error)
-      }
-        
-        return [];
+export const get_users = async (params = {}) => {
+  try {
+    const query = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v !== undefined))
+    ).toString();
+    const url = query ? `${API_URL}/${route}?${query}` : `${API_URL}/${route}`;
+    const response = await axios.get(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    return response.data;
+  } catch (error) {
+    if (isProd) {
+      Sentry.captureMessage('Error fetching users');
+      Sentry.captureException(error);
     }
-    
-}
+    return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+  }
+};
 
 export const sendResetLink=async(email)=>{
   try{

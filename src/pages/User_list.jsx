@@ -1,395 +1,332 @@
-import * as Sentry from "@sentry/react"
-import { useEffect, useState } from "react";
+import * as Sentry from "@sentry/react";
+import { useEffect, useState, useCallback } from "react";
 import { get_users, deleteUser, updateUser } from "../services/userService";
 import { motion, AnimatePresence } from "framer-motion";
 import AddUserModal from "./AddUserModal";
-import {Users} from "lucide-react"
+import { Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetch_RBAC_ALL } from "../services/rbac_service";
 import { isProd } from "../components/env";
 
-// Animation Variants
-const containerVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } },
+const DEPARTMENTS = [
+  { value: 'waste_management_dep', label: 'Waste Management' },
+  { value: 'PVT',                  label: 'PVT' },
+  { value: 'Environmental_lab_dep',label: 'Environmental Lab' },
+  { value: 'accounts_dep',         label: 'Accounts' },
+  { value: 'Human resources',      label: 'Human Resources' },
+  { value: 'IT',                   label: 'Information Technology' },
+  { value: 'Administration',       label: 'Administration' },
+  { value: 'Business_Develoment',  label: 'Business Development' },
+];
+
+const DEPT_COLORS = {
+  waste_management_dep:  'bg-green-100 text-green-800',
+  PVT:                   'bg-blue-100 text-blue-800',
+  Environmental_lab_dep: 'bg-teal-100 text-teal-800',
+  accounts_dep:          'bg-yellow-100 text-yellow-800',
+  'Human resources':     'bg-pink-100 text-pink-800',
+  IT:                    'bg-indigo-100 text-indigo-800',
+  Administration:        'bg-purple-100 text-purple-800',
+  Business_Develoment:   'bg-orange-100 text-orange-800',
 };
+
+const STATUS_STYLES = {
+  Available: 'bg-green-100 text-green-700',
+  Busy:      'bg-yellow-100 text-yellow-700',
+  'On Leave':'bg-red-100 text-red-700',
+  'On-Leave':'bg-red-100 text-red-700',
+  Remote:    'bg-blue-100 text-blue-700',
+  'On-Site': 'bg-green-100 text-green-700',
+};
+
+const WORK_STATUSES = ['Available', 'Busy', 'On Leave', 'Remote', 'On-Site'];
+const PAGE_SIZE     = 20;
+
+const EMPTY_FILTERS = { search: '', department: '', role: '' };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: "easeIn" } },
+  hidden:  { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } },
+  exit:    { opacity: 0, transition: { duration: 0.15 } },
 };
-
-// Department colors mapping
-const departmentColors = {
-  Engineering: "bg-blue-100 text-blue-800",
-  Design: "bg-purple-100 text-purple-800",
-  Marketing: "bg-pink-100 text-pink-800",
-  Sales: "bg-green-100 text-green-800",
-  HR: "bg-yellow-100 text-yellow-800",
-  Operations: "bg-indigo-100 text-indigo-800",
-  Default: "bg-gray-100 text-gray-800"
-};
-
-// Role options
 
 export default function UserList() {
-  const [users, setUsers] = useState([]);
-  const [filter, setFilter] = useState("All");
-  const [loading,setloading]=useState(false)
+  const [users, setUsers]             = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [filters, setFilters]         = useState(EMPTY_FILTERS);
+  const [applied, setApplied]         = useState(EMPTY_FILTERS);
+  const [page, setPage]               = useState(1);
+  const [meta, setMeta]               = useState({ total: 0, totalPages: 1 });
   const [editingUser, setEditingUser] = useState(null);
-  const [ALLROLES, set_ALLROLES]=useState([])
-  const [editForm, setEditForm] = useState({
-    name: "",
-    Department: "",
-    canApprove: false,
-    role: "",
-    password: "",
-    WorkStatus:"",
-    email:""
+  const [ALLROLES, setAllRoles]       = useState([]);
+  const [editForm, setEditForm]       = useState({
+    name: '', Department: '', canApprove: false,
+    role: '', password: '', WorkStatus: '', email: '',
   });
-  const [openAdduser,setOpenAdduser]=useState(false)
+  const [openAddUser, setOpenAddUser]     = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const fetch_all=async()=>{
-    try{
-      const response=await fetch_RBAC_ALL()
+  const [deleteTarget, setDeleteTarget]   = useState(null);
 
-      set_ALLROLES(response.data.data.ALL_ROLES)
-
-    }catch(error){
-      if(isProd){
-
-        Sentry.captureException(error)
-        Sentry.captureMessage("there was an error while fetching roles")
-      }
-
+  const fetchUsers = useCallback(async (params) => {
+    try {
+      setLoading(true);
+      const res = await get_users(params);
+      setUsers(res.data || []);
+      setMeta({ total: res.total || 0, totalPages: res.totalPages || 1 });
+    } catch (error) {
+      if (isProd) Sentry.captureException(error);
+    } finally {
+      setLoading(false);
     }
-  }
-
-
-  useEffect(() => {
-    fetch_users();
-    fetch_all()
-    
   }, []);
 
-  const fetch_users = async () => {
-    try {
-      setloading(true)
-      const user_data = await get_users();
-    
-      if (Array.isArray(user_data.data)) {
-        setUsers(user_data.data || []);
-      } else {
-        throw new Error("Invalid data format");
-      }
-    } catch (error) {
+  useEffect(() => {
+    fetchUsers({ ...applied, page, limit: PAGE_SIZE });
+  }, [applied, page, fetchUsers]);
 
-      if (isProd)Sentry.captureException(error)
-      
-    }finally{
-      setloading(false)
-    }
+  useEffect(() => {
+    fetch_RBAC_ALL()
+      .then(res => setAllRoles(res.data.data.ALL_ROLES))
+      .catch(() => {});
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setApplied(filters);
+    setPage(1);
   };
 
-  /*const getDepartment = async () => {
-    try {
-      const token = localStorage.getItem('sessionId');
-      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
-      const department_data = await axios.get(`${API_URL}/department`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDepartments(department_data.data.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };*/
-
-  const handleDelete = async (userId) => {
-    await deleteUser(userId);
-    setUsers(users.filter((user) => user._id !== userId));
+  const handleClear = () => {
+    setFilters(EMPTY_FILTERS);
+    setApplied(EMPTY_FILTERS);
+    setPage(1);
   };
 
-  const handleEdit = (editeduser) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteUser(deleteTarget._id);
+    setDeleteTarget(null);
+    fetchUsers({ ...applied, page, limit: PAGE_SIZE });
+  };
 
-    setEditingUser(editeduser);
+  const handleEdit = (user) => {
+    setEditingUser(user);
     setEditForm({
-      name: editeduser.name||"",
-      Department: editeduser.Department||'',
-      canApprove: editeduser.canApprove || false,
-      role: editeduser.role||"",
-      password:editeduser.password||'',
-      WorkStatus:editeduser.role||'',
-      email:editeduser.email ||""   // Leave blank for security
+      name:       user.name        || '',
+      email:      user.email       || '',
+      Department: user.Department  || '',
+      role:       user.role        || '',
+      WorkStatus: user.WorkStatus  || '',
+      canApprove: user.canApprove  || false,
+      password:   '',
     });
     setShowEditModal(true);
   };
 
   const handleEditSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    if (!editingUser || !editingUser._id) {
-      console.error("No user selected for editing");
-      return;
+    e.preventDefault();
+    try {
+      const updated = await updateUser(editingUser._id, editForm);
+      if (!updated) return;
+      setUsers(prev => prev.map(u => u._id === editingUser._id ? updated.data : u));
+      setShowEditModal(false);
+    } catch (error) {
+      if (isProd) Sentry.captureException(error);
     }
-
-
-    const updatedUser = await updateUser(editingUser._id, editForm);
-
-    if (!updatedUser) {
-      console.error("No response from updateUser");
-      return;
-    }
-
-   
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user._id === editingUser._id ? updatedUser.data : user
-      )
-    );
-
-    setShowEditModal(false);
-    // Optional: Show success toast/alert
-  } catch (error) {
-    if (isProd){
-
-      Sentry.captureMessage("Error updating user")
-      Sentry.captureException(error)
-    }
-    
-    // Optional: Show error toast/alert
-  }
-};
-
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setEditForm({
-      ...editForm,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    setEditForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
-  //console.log("filter:",filter)
-  const filteredUsers = filter === "All" || filter=== ""
-    ? users 
-    : users.filter(user => user.Department === filter);
 
-  if (loading) {
-    return <div className="p-8 flex justify-center items-center min-h-screen">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
+  const isFiltered = Object.values(applied).some(Boolean);
+  const fieldClass = "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+  if (loading && users.length === 0) {
+    return (
+      <div className="p-8 flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
+      </div>
+    );
   }
-
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 mt-10 mb-11">
-      {/* Edit User Modal */}
+
+      {/* ── Edit Modal ─────────────────────────────────────────────── */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div 
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
-            initial={{ opacity: 0, scale: 0.9 }}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Edit User</h3>
-              <button 
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold text-gray-800">Edit User</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
-            
-            <form onSubmit={handleEditSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editForm.name}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="text"
-                    name="email"
-                    value={editForm.email}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                  <select
-                    name="Department"
-                    value={editForm.Department}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">Select Department</option>
-                    <option value="waste_management_dep">Waste Management</option>
-                    <option value="PVT">PVT</option>
-                    <option value="Environmental_lab_dep">Environmental Lab</option>
-                    <option value="accounts_dep">Accounts</option>
-                    <option value="Human resources">Human Resources</option>
-                    <option value="IT">Information Technology</option>
-                    <option value="Administration">Administration</option>
-                    <option value="Business_Develoment">Business Development</option>
-           
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select
-                    name="role"
-                    value={editForm.role}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    required
-                  >
-                    
-                    <option value="">Select Role</option>
-                    {ALLROLES?.map((user,index) => (
-                      <option key={index} value={user}>{user}</option>
-                    ))}
-                  </select>
-                </div>
 
-                <div>
-                  <label>Work Status</label>
-                  <select
-                  name="WorkStatus"
-                  value={editForm.WorkStatus}
-                  onChange={handleInputChange}
-                   className="w-full p-2 border border-gray-300 rounded-lg"
-                  required
-                  >
-                    <option value="">Select Work Status</option>
-                    <option value="On-Site">On-Site</option>
-                    <option value="Remote">Remote</option>
-                    <option value="On-Leave">On-Leave</option>
-
-                  </select>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="canApprove"
-                    checked={editForm.canApprove}
-                    onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-700">Can Approve Requests</label>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password (leave blank to keep current)
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={editForm.password}
-                    onChange={handleInputChange}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder="New password"
-                  />
-                </div>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input type="text" name="name" value={editForm.name} onChange={handleInputChange} className={fieldClass} required />
               </div>
-              
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" value={editForm.email} onChange={handleInputChange} className={fieldClass} required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select name="Department" value={editForm.Department} onChange={handleInputChange} className={fieldClass}>
+                  <option value="">Select Department</option>
+                  {DEPARTMENTS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select name="role" value={editForm.role} onChange={handleInputChange} className={fieldClass} required>
+                  <option value="">Select Role</option>
+                  {ALLROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Work Status</label>
+                <select name="WorkStatus" value={editForm.WorkStatus} onChange={handleInputChange} className={fieldClass}>
+                  <option value="">Select Status</option>
+                  {WORK_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox" name="canApprove" checked={editForm.canApprove}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <label className="text-sm text-gray-700">Can Approve Requests</label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-gray-400 font-normal">(leave blank to keep current)</span>
+                </label>
+                <input type="password" name="password" value={editForm.password} onChange={handleInputChange} className={fieldClass} placeholder="New password" />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-medium">Save Changes</button>
               </div>
             </form>
           </motion.div>
         </div>
       )}
-      {openAdduser&&(
-          <AddUserModal
-          onClose={()=>setOpenAdduser(false)}        
-          />
-        )
-        }
 
-      {/* Main User List */}
+      {/* ── Delete Confirmation ────────────────────────────────────── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Remove User</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to remove <span className="font-semibold text-gray-900">{deleteTarget.name}</span>? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 font-medium">Remove</button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {openAddUser && <AddUserModal onClose={() => setOpenAddUser(false)} />}
+
+      {/* ── Main Panel ─────────────────────────────────────────────── */}
       <motion.div
-        className="w-full max-w-6xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        className="w-full max-w-6xl mx-auto bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
       >
-        <div className="p-6 border-b border-gray-200">
+        {/* Header */}
+        <div className="p-5 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-2">
-              <Users className="h-6 w-6 text-gray-800" />
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">User Management</h2>
+              <Users className="h-5 w-5 text-gray-700" />
+              <h2 className="text-xl font-bold text-gray-800">User Management</h2>
+              {meta.total > 0 && (
+                <span className="ml-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                  {isFiltered ? `${meta.total} found` : `${meta.total} total`}
+                </span>
+              )}
             </div>
-            <div className="flex  justify-between ">
-
-            <button className="p-3 bg-gray-700 text-white rounded-lg mx-3 font-bold"
-            onClick={()=>setOpenAdduser(true)}
+            <button
+              onClick={() => setOpenAddUser(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
             >
-                Add User
+              + Add User
             </button>
-            <div className="flex flex-wrap gap-2">
-              
-              <select 
-                onChange={(e) => setFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                <option value="All">Select Department</option>
-                <option value="waste_management_dep">Waste Management</option>
-                <option value="PVT">PVT</option>
-                <option value="Environmental_lab_dep">Environmental Lab</option>
-                <option value="accounts_dep">Accounts</option>
-                <option value="Human resources">Human Resources</option>
-                <option value="IT">Information Technology</option>
-                <option value="Administration">Administration</option>
-           
-              </select>
-            </div>
-            </div>
           </div>
+
+          {/* Filters */}
+          <form onSubmit={handleSearch} className="mt-4 flex flex-wrap gap-3">
+            <input
+              type="text"
+              placeholder="Search name or email…"
+              value={filters.search}
+              onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+              className="flex-1 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select
+              value={filters.department}
+              onChange={e => setFilters(f => ({ ...f, department: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Departments</option>
+              {DEPARTMENTS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            </select>
+            <select
+              value={filters.role}
+              onChange={e => setFilters(f => ({ ...f, role: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Roles</option>
+              {ALLROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+              >
+                Search
+              </button>
+              {isFiltered && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </form>
         </div>
 
-        {filteredUsers.length === 0 ? (
-          <motion.div 
-            className="p-8 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <p className="text-gray-500">No users found{filter !== "All" && ` in ${filter} Department`}.</p>
-          </motion.div>
+        {/* List */}
+        {loading ? (
+          <div className="p-8 flex justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500" />
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-12 text-center text-gray-400 text-sm">
+            No users found{isFiltered ? ' matching your filters.' : '.'}
+          </div>
         ) : (
-          <motion.ul 
-            className="divide-y divide-gray-100"
-            initial="hidden"
-            animate="visible"
-          >
+          <ul className="divide-y divide-gray-100">
             <AnimatePresence>
-              {filteredUsers.map((person) => (
+              {users.map(person => (
                 <motion.li
                   key={person._id}
                   variants={itemVariants}
@@ -397,83 +334,116 @@ export default function UserList() {
                   animate="visible"
                   exit="exit"
                   layout
-                  className="p-4 hover:bg-gray-50 transition-colors"
+                  className="px-5 py-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <motion.img
-                        alt={person?.name}
-                        src={person?.imageurl || "https://ui-avatars.com/api/?name="+person.name+"&background=random"}
-                        className="size-12 sm:size-14 flex-none rounded-full bg-gray-100 border-2 border-white shadow"
-                        whileHover={{ scale: 1.1 }}
+                      <img
+                        alt={person.name}
+                        src={person.imageurl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random`}
+                        className="w-11 h-11 rounded-full border-2 border-white shadow flex-shrink-0 object-cover"
                       />
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-900">{person?.name}</p>
-                          {person?.role === "Admin" && (
-                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full">Admin</span>
-                          )}
-                          {person?.canApprove && (
-                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">Approver</span>
+                        <div className="flex items-center flex-wrap gap-2">
+                          <p className="font-semibold text-gray-900 text-sm">{person.name}</p>
+                          {person.canApprove && (
+                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Approver</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">{person?.email}</p>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            departmentColors[person.Department] || departmentColors.Default
-                          }`}>
-                            {person.Department || "No Department"}
-                          </span>
-                          {person.role && person.role !== "Admin" && (
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
+                        <p className="text-xs text-gray-500 mt-0.5">{person.email}</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {person.Department && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DEPT_COLORS[person.Department] || 'bg-gray-100 text-gray-700'}`}>
+                              {DEPARTMENTS.find(d => d.value === person.Department)?.label || person.Department}
+                            </span>
+                          )}
+                          {person.role && (
+                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">
                               {person.role}
                             </span>
-                            
                           )}
-                          {(person.WorkStatus)&&
-                            <span className={`text-xs px-2 py-1  rounded-full
-                              ${person.WorkStatus==="On-Site"?" bg-green-100 ": "bg-red-100" }`
-                            }>
-                              {person?.WorkStatus}
+                          {person.WorkStatus && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[person.WorkStatus] || 'bg-gray-100 text-gray-600'}`}>
+                              {person.WorkStatus}
                             </span>
-                          }
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end sm:justify-normal gap-3">
-                     
-                      <motion.button
+                    <div className="flex items-center justify-end gap-2 flex-shrink-0">
+                      <button
                         onClick={() => handleEdit(person)}
-                        className="px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition font-medium flex items-center gap-1"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs rounded-lg hover:bg-blue-100 transition font-medium"
                       >
-
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
                         Edit
-                      </motion.button>
-                      <motion.button
-                        onClick={() => handleDelete(person._id)}
-                        className="px-3 py-1 bg-red-50 text-red-600 text-sm rounded-lg hover:bg-red-100 transition font-medium flex items-center gap-1"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(person)}
+                        className="px-3 py-1.5 bg-red-50 text-red-600 text-xs rounded-lg hover:bg-red-100 transition font-medium"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
                         Remove
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
                 </motion.li>
               ))}
             </AnimatePresence>
-          </motion.ul>
+          </ul>
         )}
-        
+
+        {/* ── Pagination ─────────────────────────────────────────────── */}
+        {meta.totalPages > 1 && (
+          <div className="px-5 py-4 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              Page {page} of {meta.totalPages} · {meta.total} users
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              {Array.from({ length: meta.totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === meta.totalPages || Math.abs(p - page) <= 1)
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setPage(item)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition ${
+                        page === item
+                          ? 'bg-blue-600 text-white'
+                          : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+              <button
+                onClick={() => setPage(p => Math.min(meta.totalPages, p + 1))}
+                disabled={page === meta.totalPages}
+                className="p-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );
