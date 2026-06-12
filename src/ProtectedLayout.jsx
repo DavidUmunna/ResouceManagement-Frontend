@@ -62,7 +62,7 @@ function NewVersionBanner() {
   if (!outdated || dismissed) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-max z-50 bg-gray-900 text-white text-sm rounded-xl shadow-lg px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+    <div className="fixed bottom-20 md:bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-max z-50 bg-gray-900 text-white text-sm rounded-xl shadow-lg px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
       <span className="leading-snug">
         New version available — refreshing in{' '}
         <span className="font-bold text-blue-400">{seconds}s</span>

@@ -13,7 +13,7 @@ export function useVersionCheck(intervalMs = 5 * 60 * 1000) {
         const res = await fetch(`/version.json?t=${Date.now()}`);
         if (!res.ok) return;
         const { version } = await res.json();
-        if (version !== BUILT_VERSION) setOutdated(true);
+        if (version && version !== 'dev' && version !== BUILT_VERSION) setOutdated(true);
       } catch {
         // network blip — ignore
       }
