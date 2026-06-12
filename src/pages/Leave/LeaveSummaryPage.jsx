@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useUser } from '../../components/usercontext';
@@ -141,8 +142,12 @@ export default function LeaveSummaryPage() {
   const [search, setSearch]     = useState('');
   const [typeFilter, setTypeFilter]     = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [balanceModal, setBalanceModal] = useState(null); // user object
-  const [showInfo, setShowInfo] = useState(false);
+  const [balanceModal, setBalanceModal] = useState(null);
+  const [showInfo, setShowInfo]         = useState(false);
+  const [userPage, setUserPage]         = useState(1);
+  const [reqPage, setReqPage]           = useState(1);
+  const USER_PAGE_SIZE = 6;
+  const REQ_PAGE_SIZE  =10;
 
   const canView = ALLOWED_ROLES.includes(user?.role);
 
@@ -194,8 +199,9 @@ export default function LeaveSummaryPage() {
     daysTaken: requests.filter((r) => r.status === 'Approved').reduce((s, r) => s + (r.daysRequested || 0), 0),
   }), [users, requests]);
   
-  // Filtered user rows
+  // Filtered user rows — reset page when filters change
   const filteredUsers = useMemo(() => {
+    setUserPage(1);
     const q = search.toLowerCase();
     return users?.data?.filter((u) => {
       const nameMatch = (u.name || u.username || '').toLowerCase().includes(q);
@@ -270,7 +276,7 @@ export default function LeaveSummaryPage() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* Employee table */}
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
@@ -280,80 +286,94 @@ export default function LeaveSummaryPage() {
       ) : filteredUsers.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">No employees found.</div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
-              <tr>
-                {['Employee', 'Role', 'Pending', 'Approved', 'Rejected', 'Days Taken', 'Balance'].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody data-testid="employee-table" className="divide-y divide-gray-100 bg-white">
-              {filteredUsers.map((u) => {
-                const s = userStats[u._id] || { pending: 0, approved: 0, rejected: 0, daysTaken: 0 };
-                return (
-                  <tr key={u._id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
-                      {u.name || u.username}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{u.role || '—'}</td>
-                    <td className="px-4 py-3">
-                      {s.pending > 0
-                        ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">{s.pending}</span>
-                        : <span className="text-gray-400">0</span>}
-                    </td>
-                    <td className="px-4 py-3 text-green-700 font-medium">{s.approved}</td>
-                    <td className="px-4 py-3 text-red-600">{s.rejected}</td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">{s.daysTaken}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setBalanceModal(u)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium transition"
-                      >
-                        View Balance
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Leave request detail — grouped by leave type */}
-      {requests.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <h2 className="text-base font-semibold text-gray-800">All Requests</h2>
-          <div className="flex flex-wrap gap-2">
-            {['All', ...LEAVE_TYPES].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1 text-xs rounded-full font-medium border transition ${
-                  typeFilter === t
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {t} ({t === 'All' ? requests.length : requests.filter((r) => r.leaveType === t).length})
-              </button>
-            ))}
-          </div>
-
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
                 <tr>
-                  {['Employee', 'Type', 'Start', 'End', 'Days', 'Status'].map((h) => (
-                    <th key={h} className="px-4 py-2 text-left font-medium">{h}</th>
+                  {['Employee', 'Role', 'Pending', 'Approved', 'Rejected', 'Days Taken', 'Balance'].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody data-testid="requests-table" className="divide-y divide-gray-100">
-                {(typeFilter === 'All' ? requests : requests.filter((r) => r.leaveType === typeFilter))
-                  .map((r) => (
+              <tbody data-testid="employee-table" className="divide-y divide-gray-100 bg-white">
+                {filteredUsers
+                  .slice((userPage - 1) * USER_PAGE_SIZE, userPage * USER_PAGE_SIZE)
+                  .map((u) => {
+                    const s = userStats[u._id] || { pending: 0, approved: 0, rejected: 0, daysTaken: 0 };
+                    return (
+                      <tr key={u._id} className="hover:bg-gray-50 transition">
+                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
+                          {u.name || u.username}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{u.role || '—'}</td>
+                        <td className="px-4 py-3">
+                          {s.pending > 0
+                            ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">{s.pending}</span>
+                            : <span className="text-gray-400">0</span>}
+                        </td>
+                        <td className="px-4 py-3 text-green-700 font-medium">{s.approved}</td>
+                        <td className="px-4 py-3 text-red-600">{s.rejected}</td>
+                        <td className="px-4 py-3 text-gray-700 font-medium">{s.daysTaken}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => setBalanceModal(u)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium transition"
+                          >
+                            View Balance
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            page={userPage}
+            totalPages={Math.ceil(filteredUsers.length / USER_PAGE_SIZE)}
+            total={filteredUsers.length}
+            limit={USER_PAGE_SIZE}
+            onPage={setUserPage}
+          />
+        </div>
+      )}
+
+      {/* All Requests */}
+      {requests.length > 0 && (() => {
+        const filtered = typeFilter === 'All' ? requests : requests.filter((r) => r.leaveType === typeFilter);
+        const totalReqPages = Math.ceil(filtered.length / REQ_PAGE_SIZE);
+        const reqSlice = filtered.slice((reqPage - 1) * REQ_PAGE_SIZE, reqPage * REQ_PAGE_SIZE);
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+            <h2 className="text-base font-semibold text-gray-800">All Requests</h2>
+            <div className="flex flex-wrap gap-2">
+              {['All', ...LEAVE_TYPES].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => { setTypeFilter(t); setReqPage(1); }}
+                  className={`px-3 py-1 text-xs rounded-full font-medium border transition ${
+                    typeFilter === t
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {t} ({t === 'All' ? requests.length : requests.filter((r) => r.leaveType === t).length})
+                </button>
+              ))}
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
+                  <tr>
+                    {['Employee', 'Type', 'Start', 'End', 'Days', 'Status'].map((h) => (
+                      <th key={h} className="px-4 py-2 text-left font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody data-testid="requests-table" className="divide-y divide-gray-100">
+                  {reqSlice.map((r) => (
                     <tr key={r._id} className="hover:bg-gray-50">
                       <td className="px-4 py-2 font-medium text-gray-800 whitespace-nowrap">
                         {r.user?.name || r.user?.username || '—'}
@@ -373,11 +393,19 @@ export default function LeaveSummaryPage() {
                       </td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={reqPage}
+              totalPages={totalReqPages}
+              total={filtered.length}
+              limit={REQ_PAGE_SIZE}
+              onPage={setReqPage}
+            />
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {balanceModal && (
         <BalanceModal user={balanceModal} onClose={() => setBalanceModal(null)} />

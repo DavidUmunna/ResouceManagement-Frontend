@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
 import { useUser } from '../../../components/usercontext';
 import {
@@ -59,6 +60,8 @@ export default function AdminLeavePanel() {
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [page, setPage]   = useState(1);
+  const [meta, setMeta]   = useState({ total: 0, totalPages: 1, limit: 15 });
   const [users, setUsers] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
 
@@ -70,6 +73,9 @@ export default function AdminLeavePanel() {
     try {
       const res = await getLeaveRequests(params);
       setRequests(res.data || []);
+      if (res.total !== undefined) {
+        setMeta({ total: res.total, totalPages: res.totalPages || 1, limit: res.limit || 20 });
+      }
     } catch {
       toast.error('Failed to load leave requests');
     } finally {
@@ -79,8 +85,8 @@ export default function AdminLeavePanel() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    loadRequests();
-  }, [isAdmin, loadRequests]);
+    loadRequests({ ...search, page, limit: meta.limit });
+  }, [isAdmin, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeTab !== 'Entitlements') return;
@@ -96,12 +102,14 @@ export default function AdminLeavePanel() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    loadRequests(search);
+    setPage(1);
+    loadRequests({ ...search, page: 1, limit: meta.limit });
   };
 
   const handleReset = () => {
     setSearch(EMPTY_SEARCH);
-    loadRequests();
+    setPage(1);
+    loadRequests({ page: 1, limit: meta.limit });
   };
 
   const handleConfirm = async (id, comment) => {
@@ -115,7 +123,7 @@ export default function AdminLeavePanel() {
         toast.success('Request rejected');
       }
       setModal(null);
-      loadRequests(search);
+      loadRequests({ ...search, page, limit: meta.limit });
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Action failed');
     } finally {
@@ -138,7 +146,7 @@ export default function AdminLeavePanel() {
     try {
       await cancelLeaveRequest(id);
       toast.success('Leave cancelled');
-      loadRequests(search);
+      loadRequests({ ...search, page, limit: meta.limit });
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to cancel leave');
     }
@@ -322,65 +330,74 @@ export default function AdminLeavePanel() {
           ) : requests.length === 0 ? (
             <div className="text-center py-12 text-gray-400 text-sm">No requests found.</div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
-                  <tr>
-                    {['Employee', 'Type', 'Start', 'End', 'Days', 'Reason', 'Status', 'Submitted', 'Actions'].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
-                  {requests.map((r) => (
-                    <tr key={r._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
-                        {r.user?.name || r.user?.username || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{r.leaveType}</td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmt(r.startDate)}</td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmt(r.endDate)}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.daysRequested}</td>
-                      <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{r.reason}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[r.status] || ''}`}>
-                          {r.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmt(r.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        {r.status === 'Pending' && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setModal({ request: r, action: 'approve' })}
-                              className="text-xs px-2.5 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 font-medium transition"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => setModal({ request: r, action: 'reject' })}
-                              className="text-xs px-2.5 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 font-medium transition"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                        {r.status === 'Approved' && (
-                          <button
-                            onClick={() => handleCancel(r._id)}
-                            className="text-xs px-2.5 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium transition"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        {r.status !== 'Pending' && r.status !== 'Approved' && r.adminComment && (
-                          <span className="text-xs text-gray-400 italic">{r.adminComment}</span>
-                        )}
-                      </td>
+            <div className="space-y-2">
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
+                    <tr>
+                      {['Employee', 'Type', 'Start', 'End', 'Days', 'Reason', 'Status', 'Submitted', 'Actions'].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {requests.map((r) => (
+                      <tr key={r._id} className="hover:bg-gray-50 transition">
+                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
+                          {r.user?.name || r.user?.username || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">{r.leaveType}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmt(r.startDate)}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmt(r.endDate)}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.daysRequested}</td>
+                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{r.reason}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[r.status] || ''}`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmt(r.createdAt)}</td>
+                        <td className="px-4 py-3">
+                          {r.status === 'Pending' && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setModal({ request: r, action: 'approve' })}
+                                className="text-xs px-2.5 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 font-medium transition"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => setModal({ request: r, action: 'reject' })}
+                                className="text-xs px-2.5 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 font-medium transition"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                          {r.status === 'Approved' && (
+                            <button
+                              onClick={() => handleCancel(r._id)}
+                              className="text-xs px-2.5 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium transition"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          {r.status !== 'Pending' && r.status !== 'Approved' && r.adminComment && (
+                            <span className="text-xs text-gray-400 italic">{r.adminComment}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                page={page}
+                totalPages={meta.totalPages}
+                total={meta.total}
+                limit={meta.limit}
+                onPage={(p) => setPage(p)}
+              />
             </div>
           )}
         </div>

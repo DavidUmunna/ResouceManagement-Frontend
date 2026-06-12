@@ -412,6 +412,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
         prev.map(o => o._id === order._id ? { ...o, escalated } : o)
       );
       toast.success(escalated ? 'Order escalated — approvers have been notified' : 'Escalation removed');
+      RefreshRequest();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to escalate order');
     }
@@ -854,7 +855,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                             </h3>
                             {getStatusBadge(order)}
                             {order.escalated && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -873,28 +874,39 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                           </div>
 
                           {(() => {
-                            const isOwner =
-                              (user.email && order.staff?.email === user.email) ||
-                              (user.userId && order.staff?._id?.toString() === user.userId.toString()) ||
-                              (user.userId && String(order.staff) === String(user.userId));
-                            
-                            return isOwner && order.status === 'Pending';
-                          })() && (
-                            <button
-                              onClick={(e) => handleEscalate(e, order)}
-                              title={order.escalated ? 'Remove escalation' : 'Escalate this order'}
-                              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
-                                order.escalated
-                                  ? 'bg-orange-100 text-orange-700 border border-orange-300 hover:bg-orange-200'
-                                  : 'bg-orange-500 text-white hover:bg-orange-600'
-                              }`}
-                            >
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              {order.escalated ? 'Escalated' : 'Escalate'}
-                            </button>
-                          )}
+                            const meId    = String(user?.userId || user?._id || user?.id || '');
+                            const staffId = order.staff?._id ? String(order.staff._id) : String(order.staff ?? '');
+                            const emailMatch = !!(user?.email && order.staff?.email && order.staff.email.toLowerCase() === user.email.toLowerCase());
+                            const idMatch    = !!(meId && staffId && meId === staffId);
+                            const isOwner    = emailMatch || idMatch;
+                            const isPending  = order.status === 'Pending';
+                            const approvals = order.approvals || [];
+                            const isPartiallyApproved = approvals.some(a => a.status === 'Approved')
+                              && !approvals.some(a => a.status === 'Rejected')
+                              && !approvals.every(a => a.status === 'Approved');
+
+                            return (
+                              <>
+                                {/* Escalate: owner only. De-escalate: approvers only */}
+                                {(isPending || isPartiallyApproved) && (isOwner || (order.escalated && user.canApprove)) && (
+                                  <button
+                                    onClick={(e) => handleEscalate(e, order)}
+                                    title={order.escalated ? 'Remove escalation' : 'Escalate this order'}
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                      order.escalated
+                                        ? 'bg-yellow-100 text-yellow-700 border border-yellow-300 hover:bg-yellow-200'
+                                        : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                    }`}
+                                  >
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    {order.escalated ? 'De-escalate' : 'Escalate'}
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
                           
 
                           {/* Payment badge / record button */}
