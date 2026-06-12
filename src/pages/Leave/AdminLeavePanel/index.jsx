@@ -6,6 +6,7 @@ import {
   approveLeaveRequest,
   rejectLeaveRequest,
   cancelLeaveRequest,
+  exportLeaveRequests,
 } from '../../../services/leaveService';
 import ActionModal from './ActionModal';
 import EntitlementEditor from './EntitlementEditor';
@@ -57,6 +58,7 @@ export default function AdminLeavePanel() {
   const [search, setSearch] = useState(EMPTY_SEARCH);
   const [modal, setModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [users, setUsers] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
 
@@ -118,6 +120,17 @@ export default function AdminLeavePanel() {
       toast.error(err?.response?.data?.message || 'Action failed');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportLeaveRequests(search);
+    } catch {
+      toast.error('Failed to export leave data');
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -282,6 +295,22 @@ export default function AdminLeavePanel() {
                 className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
               >
                 Reset
+              </button>
+              <button
+                type="button"
+                onClick={handleExport}
+                disabled={exporting || loadingReqs}
+                className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {exporting ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Exporting…
+                  </>
+                ) : 'Export Excel'}
               </button>
             </div>
           </form>

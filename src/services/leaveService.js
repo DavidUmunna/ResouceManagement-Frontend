@@ -100,6 +100,20 @@ export const updateEntitlement = async (userId, leaveType, entitlement) => {
   }
 };
 
+export const exportLeaveRequests = async (params = {}) => {
+  const query = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+  ).toString();
+  const url = query ? `${BASE}/requests/export?${query}` : `${BASE}/requests/export`;
+  const res = await axios.get(url, { ...cfg, responseType: 'blob' });
+  const filename = `leave_requests_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([res.data]));
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+
 export const getPolicy = async () => {
   try {
     const res = await axios.get(`${BASE}/policy`, cfg);

@@ -45,7 +45,7 @@ const NAV_GROUPS = [
     label: 'Admin & Tools',
     icon: Settings2,
     items: [
-      { name: 'AI Tools',              to: '/admin/ai-tools',            icon: Brain,           visibleTo: R['ai-tools'] },
+      { name: 'AI Tools',              to: '/admin/ai-tools',            icon: Brain },
       { name: 'App Monitoring',        to: '/admin/monitoring',          icon: Activity,        visibleTo: R.monitoring },
       { name: 'Issues',                to: '/admin/feedback',            icon: AiOutlineWarning },
     ],

@@ -5,11 +5,8 @@ import React, { useState,useRef,useEffect } from 'react';
 import { useUser } from "./usercontext";
 import user_img from "./assets/user.png";
 import { motion } from 'framer-motion';
-import { isProd } from './env';
 import { PanelLeft,CalendarClock } from 'lucide-react';
 import Sidebar from './Sidebar';
-import {fetch_RBAC} from "../services/rbac_service"
-import * as Sentry from "@sentry/react"
 import {FiFileText} from "react-icons/fi"
 import { EnableNotifications, subscribeToForegroundMessages } from '../firebaseConfig';
 const navigation = [
@@ -37,7 +34,6 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const sidebarRef=useRef(null);
-  const [ADMIN_ROLES_GENERAL,set_ADMIN_ROLES_GENERAL]=useState([])
   const [notificationToast, setNotificationToast] = useState(null);
 
   const handleEnableNotifications = async () => {
@@ -67,26 +63,6 @@ export default function Navbar() {
 
   });
   
-    useEffect(()=>{
-        const rbac_=async()=>{
-          try{
-
-            const response=await fetch_RBAC()
-           
-             if (Array.isArray(response.data.data.ADMIN_ROLES_GENERAL)) {
-          set_ADMIN_ROLES_GENERAL(response.data.data.ADMIN_ROLES_GENERAL);
-          } else {
-
-          set_ADMIN_ROLES_GENERAL([]);
-        }
-          }catch(error){
-
-            if (isProd) Sentry.captureException(error)
-          }
-        }
-        rbac_()
-
-    },[user])
 
   useEffect(() => {
     if (!user) {
@@ -132,16 +108,14 @@ export default function Navbar() {
             <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center">
-                  {/* Sidebar toggle (only for admin) */}
-                  {ADMIN_ROLES_GENERAL.includes(user?.role) && (
-                    <button
-                      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                      className="p-2 text-gray-400 hover:text-white mr-2"
-                      aria-label="Toggle sidebar"
-                    >
-                      <PanelLeft className="h-6 w-6" />
-                    </button>
-                  )}
+                  {/* Sidebar toggle */}
+                  <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-2 text-gray-400 hover:text-white mr-2"
+                    aria-label="Toggle sidebar"
+                  >
+                    <PanelLeft className="h-6 w-6" />
+                  </button>
 
                   <div className="flex-shrink-0">
                     <img

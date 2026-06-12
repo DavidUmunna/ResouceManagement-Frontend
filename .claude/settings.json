@@ -18,6 +18,11 @@
       "Bash(REACT_APP_API_URL=http://localhost:3001 npx jest test/LeavePage.test.jsx --no-coverage)",
       "Bash(REACT_APP_API_URL=http://localhost:3001 npx eslint src --ext .js,.jsx --rule '{\"no-unused-vars\":\"warn\"}' --no-eslintrc)",
       "Bash(REACT_APP_API_URL=http://localhost:3001 npx eslint src --ext .js,.jsx)"
+    ],
+    "additionalDirectories": [
+      "/Users/admin/ResourceManagement-backend/services",
+      "/Users/admin/ResourceManagement-backend/controllers/v2.controllers",
+      "/Users/admin/ResourceManagement-backend/routes/v2"
     ]
   }
 }

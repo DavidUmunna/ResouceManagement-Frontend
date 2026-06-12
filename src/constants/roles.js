@@ -15,7 +15,7 @@ export const ROUTE_ROLES = {
   inventorylogs:       ['global_admin', 'admin', 'QHSE Coordinator', 'lab_supervisor', 'procurement_officer', 'Environmental_lab_manager'],
   tenders:             ['global_admin'],
   filetracking:        ['Contracts_manager', 'global_admin'],
-  'ai-tools':          ['global_admin'],
+  // no entry for 'ai-tools' — every authenticated user can access it
   departmentassignment:['global_admin'],
   skipstracking:       ['global_admin', 'Waste Management Manager', 'Waste Management Supervisor', 'Logistics Manager'],
   monitoring:          ['global_admin'],
