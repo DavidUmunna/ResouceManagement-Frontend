@@ -62,20 +62,25 @@ function NewVersionBanner() {
   if (!outdated || dismissed) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg">
-      <span>New version available — refreshing in <span className="font-bold text-blue-400">{seconds}s</span></span>
-      <button
-        onClick={() => window.location.reload()}
-        className="px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-400 font-medium transition-colors"
-      >
-        Refresh now
-      </button>
-      <button
-        onClick={() => setDismissed(true)}
-        className="px-3 py-1 rounded-lg border border-gray-600 hover:bg-gray-700 transition-colors"
-      >
-        Dismiss
-      </button>
+    <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-max z-50 bg-gray-900 text-white text-sm rounded-xl shadow-lg px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+      <span className="leading-snug">
+        New version available — refreshing in{' '}
+        <span className="font-bold text-blue-400">{seconds}s</span>
+      </span>
+      <div className="flex gap-2 w-full sm:w-auto">
+        <button
+          onClick={() => window.location.reload()}
+          className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 font-medium transition-colors text-center"
+        >
+          Refresh now
+        </button>
+        <button
+          onClick={() => setDismissed(true)}
+          className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg border border-gray-600 hover:bg-gray-700 transition-colors text-center"
+        >
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }
