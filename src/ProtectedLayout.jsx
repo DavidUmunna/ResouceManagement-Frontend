@@ -4,6 +4,7 @@ import "./index.css";
 import AppLayout   from "./components/AppLayout";
 import RoleGuard   from "./components/RoleGuard";
 import { ROUTE_ROLES as R } from "./constants/roles";
+import { useVersionCheck } from "./hooks/useVersionCheck";
 
 // Eagerly loaded — small or always-needed pages
 import CreateOrder         from "./pages/CreateOrder";
@@ -46,6 +47,39 @@ function Guard({ route, children }) {
   return allowed ? <RoleGuard allowed={allowed}>{children}</RoleGuard> : children;
 }
 
+function NewVersionBanner() {
+  const outdated = useVersionCheck();
+  const [seconds, setSeconds] = React.useState(30);
+  const [dismissed, setDismissed] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!outdated || dismissed) return;
+    if (seconds <= 0) { window.location.reload(); return; }
+    const id = setTimeout(() => setSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [outdated, dismissed, seconds]);
+
+  if (!outdated || dismissed) return null;
+
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg">
+      <span>New version available — refreshing in <span className="font-bold text-blue-400">{seconds}s</span></span>
+      <button
+        onClick={() => window.location.reload()}
+        className="px-3 py-1 rounded-lg bg-blue-500 hover:bg-blue-400 font-medium transition-colors"
+      >
+        Refresh now
+      </button>
+      <button
+        onClick={() => setDismissed(true)}
+        className="px-3 py-1 rounded-lg border border-gray-600 hover:bg-gray-700 transition-colors"
+      >
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
 export default function ProtectedLayout({ isauthenticated, setisauthenticated }) {
   const [dashboardIsLoading, setDashboardIsLoading] = React.useState(false);
 
@@ -55,6 +89,7 @@ export default function ProtectedLayout({ isauthenticated, setisauthenticated })
 
   return (
     <Suspense fallback={<LoadingFallback />}>
+      <NewVersionBanner />
       <Routes>
         <Route path="admin" element={<AppLayout isLoading={dashboardIsLoading} />}>
 

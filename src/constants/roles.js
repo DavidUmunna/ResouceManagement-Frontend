@@ -5,6 +5,9 @@
 // (fetched via /api/access → usercontext, and enumerated by rbac_service).
 // If the backend renames a role, update it here too.
 
+export const PAYMENT_ROLES = ['financial_manager','Accounts'];
+export const PAYMENT_DEPTS = ['accounts_dep', 'Accounts'];
+
 export const ROUTE_ROLES = {
   assetsmanagement:    ['procurement_officer', 'human_resources', 'global_admin', 'Accountant', 'Financial_manager'],
   supplierlist:        ['procurement_officer', 'global_admin', 'internal_auditor'],

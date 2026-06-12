@@ -7,6 +7,8 @@ import {
   deleteOrder,
   downloadFile,
   escalateOrder,
+  recordPayment,
+  downloadReceipt,
 
 } from "../../services/OrderService";
 import SignatureModal from "../../components/SignatureModal";
@@ -28,7 +30,7 @@ import { toast } from "react-toastify";
 import { isProd } from "../../components/env";
 import EditOrderModal from "./EditOrderModal";
 import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
-
+import { PAYMENT_ROLES, PAYMENT_DEPTS } from "../../constants/roles";
 
 const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error, setError ,RefreshRequest,accRoles, EditingRoles,DeletionRoles}) => {
   const { keyword, status, dateRange, orderedby } = useSelector(
@@ -58,6 +60,9 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const [EditingModalId,setEditingModalId]=useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loadingDownload, setLoadingDownload]=useState({selectedOrderId:'',status:false})
+  const [payModalOrder, setPayModalOrder] = useState(null);
+  const [payForm, setPayForm] = useState({ reference: '', channel: 'bank_transfer', paidAt: '', amount: '' });
+  const [payLoading, setPayLoading] = useState(false);
   const getOverallStatus = (approvals, Department,role) => {
     if (!approvals || approvals.length === 0) return "Pending";
     if (approvals.some(a => a.status === "Rejected")) return "Rejected";
@@ -412,6 +417,42 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     }
   };
 
+  const openPayModal = (e, order) => {
+    e.stopPropagation();
+    const total = (order.products || []).reduce((s, p) => s + (p.price || 0) * (p.quantity || 1), 0);
+    setPayForm({
+      reference: '',
+      channel: 'bank_transfer',
+      paidAt: new Date().toISOString().slice(0, 10),
+      amount: total,
+    });
+    setPayModalOrder(order);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!payForm.reference.trim()) {
+      toast.error('Payment reference is required');
+      return;
+    }
+    setPayLoading(true);
+    try {
+      const result = await recordPayment(payModalOrder._id, payForm);
+      toast.success('Payment recorded successfully');
+      setOrders(prev =>
+        prev.map(o =>
+          o._id === payModalOrder._id
+            ? { ...o, payment: { ...o.payment, ...result.payment } }
+            : o
+        )
+      );
+      setPayModalOrder(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to record payment');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -660,6 +701,20 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           </span>
         )}
       </div>
+      {order.payment?.status === 'paid' && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-gray-600">Payment Receipt:</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); downloadReceipt(order._id, order.orderNumber); }}
+            className="flex items-center gap-1.5 text-green-600 hover:text-green-800 text-sm"
+            title="Download payment receipt"
+          >
+            <FaMoneyBillWave className="w-3.5 h-3.5" />
+            {order.payment.reference} — Download Receipt
+          </button>
+        </div>
+      )}
+
        {order.remarks && (
         <div>
           <p className="font-medium text-gray-600">Remarks:</p>
@@ -822,7 +877,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                               (user.email && order.staff?.email === user.email) ||
                               (user.userId && order.staff?._id?.toString() === user.userId.toString()) ||
                               (user.userId && String(order.staff) === String(user.userId));
-                            console.log("owner", isOwner);
+                            
                             return isOwner && order.status === 'Pending';
                           })() && (
                             <button
@@ -841,6 +896,26 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                             </button>
                           )}
                           
+
+                          {/* Payment badge / record button */}
+                          {order.payment?.status === 'paid' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                              <FaMoneyBillWave className="w-3 h-3" />
+                              Paid
+                            </span>
+                          ) : (
+                            (PAYMENT_ROLES.includes(user.role) || PAYMENT_DEPTS.includes(user.Department)) &&
+                            order.status === 'Approved' && (
+                              <button
+                                onClick={(e) => openPayModal(e, order)}
+                                title="Record payment receipt"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+                              >
+                                <FaMoneyBillWave className="w-3 h-3" />
+                                Record Payment
+                              </button>
+                            )
+                          )}
 
                           {order.filenames?.length > 0 && (
                             <div className="flex justify-between">
@@ -1093,6 +1168,82 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
         onConfirm={handleDelete}
         orderId={selectedOrderId}
         />
+
+        {/* Payment receipt recording modal */}
+        {payModalOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-800">Record Payment</h2>
+              <p className="text-sm text-gray-500">
+                {payModalOrder.Title} &mdash; {payModalOrder.orderNumber}
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Reference *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TRF/2025/001234"
+                    value={payForm.reference}
+                    onChange={e => setPayForm(f => ({ ...f, reference: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Channel</label>
+                  <select
+                    value={payForm.channel}
+                    onChange={e => setPayForm(f => ({ ...f, channel: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="card">Card</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Amount Paid (₦)</label>
+                  <input
+                    type="number"
+                    value={payForm.amount}
+                    onChange={e => setPayForm(f => ({ ...f, amount: Number(e.target.value) }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Date</label>
+                  <input
+                    type="date"
+                    value={payForm.paidAt}
+                    onChange={e => setPayForm(f => ({ ...f, paidAt: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setPayModalOrder(null)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRecordPayment}
+                  disabled={payLoading}
+                  className="flex-1 px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 disabled:opacity-60"
+                >
+                  {payLoading ? 'Saving…' : 'Confirm Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
           {isLoading && total > 0 && (
             <DownloadStatus
               downloadedBytes={downloaded}

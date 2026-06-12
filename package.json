@@ -59,7 +59,7 @@
   },
   "scripts": {
     "start": "react-scripts --openssl-legacy-provider start",
-    "build": "react-scripts --openssl-legacy-provider build",
+    "build": "REACT_APP_VERSION=$(git rev-parse --short HEAD) react-scripts --openssl-legacy-provider build && node -e \"require('fs').writeFileSync('build/version.json', JSON.stringify({version:process.env.REACT_APP_VERSION||'dev'}))\"",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
