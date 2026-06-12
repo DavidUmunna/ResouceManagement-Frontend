@@ -879,11 +879,9 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                             const emailMatch = !!(user?.email && order.staff?.email && order.staff.email.toLowerCase() === user.email.toLowerCase());
                             const idMatch    = !!(meId && staffId && meId === staffId);
                             const isOwner    = emailMatch || idMatch;
-                            const isPending  = order.status === 'Pending';
-                            const approvals = order.approvals || [];
-                            const isPartiallyApproved = approvals.some(a => a.status === 'Approved')
-                              && !approvals.some(a => a.status === 'Rejected')
-                              && !approvals.every(a => a.status === 'Approved');
+                            const computedStatus      = getOverallStatus(order.Approvals, order.staff?.Department, order.staff?.role);
+                            const isPending           = computedStatus === 'Pending';
+                            const isPartiallyApproved = computedStatus === 'Partially Approved';
 
                             return (
                               <>
