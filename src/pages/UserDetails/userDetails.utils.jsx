@@ -17,13 +17,9 @@ export const getInitials = (name) => {
     .toUpperCase();
 };
 
-export const calculateStats = (approved, rejected, pending, completed,MoreInformation) => {
-  const total = approved.length + rejected.length + pending.length + completed.length+MoreInformation.length;
+export const calculateStats = (approved, rejected, pending, completed) => {
+  const total = approved.length + rejected.length + pending.length + completed.length;
   const rate = total > 0 ? Math.round((approved.length / total) * 100) : 0;
- 
-  approved.forEach(order => {
- 
-  })
   const avgProcessingTime = approved.reduce((sum, order) => {
     if (!order.createdAt || !order.Approvals?.length) return sum;
     const created = new Date(order.createdAt);
