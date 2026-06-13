@@ -7,11 +7,13 @@ import {
   approveLeaveRequest,
   rejectLeaveRequest,
   cancelLeaveRequest,
+  deleteLeaveRequest,
   exportLeaveRequests,
 } from '../../../services/leaveService';
 import ActionModal from './ActionModal';
 import EntitlementEditor from './EntitlementEditor';
 import InfoModal from '../../../components/InfoModal';
+import { DeleteConfirmationModal } from '../../../components/DeleteConfirmationModal';
 import axios from 'axios';
 
 const LEAVE_TYPES = ['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid'];
@@ -64,6 +66,7 @@ export default function AdminLeavePanel() {
   const [meta, setMeta]   = useState({ total: 0, totalPages: 1, limit: 15 });
   const [users, setUsers] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const ADMIN_ROLES = ['admin', 'global_admin'];
   const isAdmin = ADMIN_ROLES.includes(user?.role);
@@ -149,6 +152,17 @@ export default function AdminLeavePanel() {
       loadRequests({ ...search, page, limit: meta.limit });
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to cancel leave');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteLeaveRequest(id);
+      toast.success('Leave request permanently deleted');
+      setDeleteTarget(null);
+      loadRequests({ ...search, page, limit: meta.limit });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to delete request');
     }
   };
 
@@ -385,6 +399,12 @@ export default function AdminLeavePanel() {
                           {r.status !== 'Pending' && r.status !== 'Approved' && r.adminComment && (
                             <span className="text-xs text-gray-400 italic">{r.adminComment}</span>
                           )}
+                          <button
+                            onClick={() => setDeleteTarget(r)}
+                            className="text-xs px-2.5 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 font-medium transition"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -414,6 +434,15 @@ export default function AdminLeavePanel() {
           onConfirm={handleConfirm}
           onClose={() => setModal(null)}
           loading={actionLoading}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmationModal
+          isOpen={!!deleteTarget}
+          onConfirm={handleDelete}
+          onClose={() => setDeleteTarget(null)}
+          orderId={deleteTarget._id}
         />
       )}
     </div>

@@ -70,6 +70,16 @@ export const cancelLeaveRequest = async (id) => {
   }
 };
 
+export const deleteLeaveRequest = async (id) => {
+  try {
+    const res = await axios.delete(`${BASE}/requests/${id}/hard`, cfg);
+    return res.data;
+  } catch (err) {
+    capture('Error deleting leave request', err);
+    throw err;
+  }
+};
+
 export const getMyBalance = async () => {
   try {
     const res = await axios.get(`${BASE}/balance`, cfg);
