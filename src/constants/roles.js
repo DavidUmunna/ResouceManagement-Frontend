@@ -9,9 +9,9 @@ export const PAYMENT_ROLES = ['financial_manager','Accounts'];
 export const PAYMENT_DEPTS = ['accounts_dep', 'Accounts'];
 
 export const ROUTE_ROLES = {
-  assetsmanagement:    ['procurement_officer', 'human_resources', 'global_admin', 'Accountant', 'Financial_manager'],
+  assetsmanagement:    ['procurement_officer', 'human_resources', 'global_admin', 'Accountant', 'Financial_manager','Director'],
   supplierlist:        ['procurement_officer', 'global_admin', 'internal_auditor'],
-  inventorymanagement: ['procurement_officer', 'admin', 'human_resources', 'global_admin', 'Environmental_lab_manager', 'lab_supervisor', 'QHSE Coordinator'],
+  inventorymanagement: ['procurement_officer', 'admin', 'human_resources', 'global_admin', 'Environmental_lab_manager', 'lab_supervisor', 'QHSE Coordinator','Director'],
   inventorylogs:       ['global_admin', 'admin', 'QHSE Coordinator', 'lab_supervisor', 'procurement_officer', 'Environmental_lab_manager'],
   tenders:             ['global_admin'],
   filetracking:        ['Contracts_manager', 'global_admin'],
