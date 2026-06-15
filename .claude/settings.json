@@ -25,7 +25,8 @@
       "/Users/admin/ResourceManagement-backend/routes/v2",
       "/Users/admin/ResourceManagement-backend/routes/v1",
       "/Users/admin/ResourceManagement-backend/repositories",
-      "/Users/admin/ResourceManagement-backend/__tests__/routes/v2"
+      "/Users/admin/ResourceManagement-backend/__tests__/routes/v2",
+      "/Users/admin/ResourceManagement-backend/__tests__/routes/v1"
     ]
   }
 }
