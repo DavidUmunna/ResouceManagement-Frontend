@@ -7,6 +7,7 @@ import {
   deleteOrder,
   downloadFile,
   escalateOrder,
+  deescalateOrder,
   recordPayment,
   downloadReceipt,
 
@@ -407,14 +408,22 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const handleEscalate = async (e, order) => {
     e.stopPropagation();
     try {
-      const { escalated } = await escalateOrder(order._id);
-      setOrders(prev =>
-        prev.map(o => o._id === order._id ? { ...o, escalated } : o)
-      );
-      toast.success(escalated ? 'Order escalated — approvers have been notified' : 'Escalation removed');
-      RefreshRequest();
+      await escalateOrder(order._id);
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, escalated: true } : o));
+      toast.success('Order escalated — approvers have been notified');
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to escalate order');
+    }
+  };
+
+  const handleDeescalate = async (e, order) => {
+    e.stopPropagation();
+    try {
+      await deescalateOrder(order._id);
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, escalated: false } : o));
+      toast.success('Escalation removed');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to remove escalation');
     }
   };
 
@@ -902,10 +911,10 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                     Escalate
                                   </button>
                                 )}
-                                {/* De-escalate: any approver, regardless of status */}
-                                {order.escalated && user.canApprove && (
+                                {/* De-escalate: owner or any approver */}
+                                {order.escalated && (isOwner || user.canApprove) && (
                                   <button
-                                    onClick={(e) => handleEscalate(e, order)}
+                                    onClick={(e) => handleDeescalate(e, order)}
                                     title="Remove escalation"
                                     className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors bg-yellow-100 text-yellow-700 border border-yellow-300 hover:bg-yellow-200"
                                   >

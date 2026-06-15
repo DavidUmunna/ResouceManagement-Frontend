@@ -166,6 +166,15 @@ export const escalateOrder = async (orderId) => {
   return response.data;
 };
 
+export const deescalateOrder = async (orderId) => {
+  const response = await axios.put(
+    `${API_URL}/${orders}/${orderId}/deescalate`,
+    {},
+    { withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  return response.data;
+};
+
 export const recordPayment = async (orderId, { reference, channel, paidAt, amount }) => {
   const response = await axios.post(
     `${API_URL}/${orders}/${orderId}/pay/record`,
