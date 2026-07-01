@@ -9,6 +9,9 @@ import axios from "axios"
 import ForgotPassword from "./pages/forgotpassword";
 import Landingpage from "./pages/landinpage/Resourcelanding"
 import Aboutus from "./pages/landinpage/Aboutus/main";
+import PrivacyPolicy from "./pages/landinpage/legal/PrivacyPolicy";
+import TermsOfService from "./pages/landinpage/legal/TermsOfService";
+import CookiePolicy from "./pages/landinpage/legal/CookiePolicy";
 import Layout from "./pages/landinpage/layout/Layout"
 import PrivateRoute from "./pages/PrivateRoute";
 import ProtectedLayout from "./ProtectedLayout";
@@ -102,6 +105,9 @@ const App = () => {
               
                 <Route index element={<Landingpage/>}/>
                 <Route path="/aboutus" element={<Aboutus/>}/>
+                <Route path="/privacy" element={<PrivacyPolicy/>}/>
+                <Route path="/terms" element={<TermsOfService/>}/>
+                <Route path="/cookies" element={<CookiePolicy/>}/>
                 <Route path="/companydata" element={<CompanyDataForm/>}/>
                 <Route path="/subscription" element={<SubscriptionPage/>}/>
               </Route>

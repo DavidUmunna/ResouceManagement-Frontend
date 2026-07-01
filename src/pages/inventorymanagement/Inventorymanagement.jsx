@@ -132,14 +132,16 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
         setActivities(activitiesRes.data.data || []);
         
       } catch (err) {
-        if (err.response?.status === 401 || err.response?.status === 403) {
+        /*if (err.response?.status === 401 || err.response?.status === 403) {
           setError("Session expired. Please log in again.");
           localStorage.removeItem('sessionId');
           
           window.location.href = '/adminlogin'; 
         } else {
           Sentry.captureException( err);
-        }
+        }*/
+        console.error('Create failed:', err.response?.data || err.message);
+   
       } finally {
         setloading(false);
       }
@@ -372,14 +374,16 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       setShowForm(false);
       onInventoryChange()
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      /*if (err.response?.status === 401 || err.response?.status === 403) {
         setError("Session expired. Please log in again.");
         localStorage.removeItem('sessionId');
         setAuth(false);
           window.location.href = '/adminlogin'; 
       } else {
         console.error('Create failed:', err.response?.data || err.message);
-      }
+      }*/
+      console.error('Create failed:', err.response?.data || err.message);
+   
     }finally{
       setIsSubmitting(false)
     }

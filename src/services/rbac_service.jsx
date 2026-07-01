@@ -14,9 +14,9 @@ axios.interceptors.response.use(
     const request_url=error?.config.url ||""
 
     const shouldHandlerrors=!excludedurls.some(ex=>request_url.includes(ex))
-    if (!error.response && shouldHandlerrors) {
+    /*if (!error.response && shouldHandlerrors) {
       window.location.href = "/adminlogin";
-    }
+    }*/
     return Promise.reject(error);
   }
 );
