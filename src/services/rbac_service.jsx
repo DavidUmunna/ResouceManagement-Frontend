@@ -3,22 +3,12 @@ import * as Sentry from "@sentry/react"
 import { isProd } from "../components/env";
 
 
+// Pass-through interceptor. The automatic redirect to /adminlogin on network
+// errors was removed because it caused a full-page reload loop when the API was
+// briefly unreachable. Auth failures (401/403) are handled per-request instead.
 axios.interceptors.response.use(
   response => response,
-  error => {
-    const excludedurls=[
-      "/api/access",
-      "/api/admin-user/login",
-      "/api/csrf-token"
-    ]
-    const request_url=error?.config.url ||""
-
-    const shouldHandlerrors=!excludedurls.some(ex=>request_url.includes(ex))
-    /*if (!error.response && shouldHandlerrors) {
-      window.location.href = "/adminlogin";
-    }*/
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 export const fetch_RBAC_ALL=async()=>{
       try{

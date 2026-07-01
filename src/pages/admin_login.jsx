@@ -88,7 +88,7 @@ export default function Sign_in({ setAuth }) {
             className="mx-auto h-14 w-14 "
           />
           <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-              Sign in to Your Account
+              Halden Nigeria Limited
           </h2>
         </div>
 
