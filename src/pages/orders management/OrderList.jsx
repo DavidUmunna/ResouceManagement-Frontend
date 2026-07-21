@@ -33,6 +33,21 @@ import EditOrderModal from "./EditOrderModal";
 import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
 import { PAYMENT_ROLES, PAYMENT_DEPTS } from "../../constants/roles";
 
+// Relative time, e.g. "just now", "3 hours ago", "2 days ago"
+const timeAgo = (dateStr) => {
+  if (!dateStr) return "";
+  const then = new Date(dateStr);
+  if (isNaN(then.getTime())) return "";
+  const seconds = Math.floor((Date.now() - then.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
+
 const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error, setError ,RefreshRequest,accRoles, EditingRoles,DeletionRoles}) => {
   const { keyword, status, dateRange, orderedby } = useSelector(
     (state) => state.search
@@ -878,8 +893,9 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
+                          <div className="text-sm text-gray-500 text-right">
+                            <div>{new Date(order.createdAt).toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-400">{timeAgo(order.createdAt)}</div>
                           </div>
 
                           {(() => {

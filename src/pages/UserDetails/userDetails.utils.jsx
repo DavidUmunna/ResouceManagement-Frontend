@@ -9,6 +9,25 @@ export const formatDate = (dateStr) => {
   });
 };
 
+// Relative time, e.g. "just now", "3 hours ago", "2 days ago"
+export const timeAgo = (dateStr) => {
+  if (!dateStr) return "";
+  const then = new Date(dateStr);
+  if (isNaN(then.getTime())) return "";
+
+  const seconds = Math.floor((Date.now() - then.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
+
 export const getInitials = (name) => {
   if (!name) return "U";
   return name.split(' ')

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { createOrder } from "../services/OrderService";
 import { FileText, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "../components/usercontext";
 import { FiInfo } from "react-icons/fi";
+
+const WASTE_MGT_DEPARTMENT = "waste_management_dep";
+const ASSET_CATEGORY = "waste_management";
 
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -36,13 +40,39 @@ const CreateOrder = () => {
   const [role,setrole]=useState("")
   const [IsTarget,setIsTarget]=useState(false)
   const [showInfo, setShowInfo] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [assetSubCategory, setAssetSubCategory] = useState("");
+  const [assetSubCategories, setAssetSubCategories] = useState([]);
+
+  const isWasteMgt = user?.Department === WASTE_MGT_DEPARTMENT;
+
   useEffect(() => {
     if (user) {
-    
+
       setEmail(user.email);
       setStaff(user.userId)
     }
   }, [user]);
+
+  // Load the waste-management asset sub-categories so a maintenance request
+  // can be tied to the asset type it applies to.
+  useEffect(() => {
+    if (!isWasteMgt || !isMaintenance) return;
+    const fetchSubCategories = async () => {
+      try {
+        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+        const res = await axios.get(`${API_URL}/assets/subcategories`, {
+          params: { category: ASSET_CATEGORY },
+          headers: { "ngrok-skip-browser-warning": "true" },
+          withCredentials: true,
+        });
+        setAssetSubCategories(res.data?.data?.subCategories || []);
+      } catch {
+        setAssetSubCategories([]);
+      }
+    };
+    fetchSubCategories();
+  }, [isWasteMgt, isMaintenance]);
 
   const handleFileChange = (event) => {
     const uploadedFiles = event.target.files ? Array.from(event.target.files) : [];
@@ -81,7 +111,18 @@ const CreateOrder = () => {
     if (IsTarget){
       payload.targetDepartment=targetDepartment
     }
-   
+
+    if (isWasteMgt && isMaintenance) {
+      if (!assetSubCategory) {
+        setError("Please select the asset sub-category for this maintenance request.");
+        return;
+      }
+      payload.isMaintenance = true;
+      payload.assetCategory = ASSET_CATEGORY;
+      payload.assetSubCategory = assetSubCategory;
+    }
+
+
 
     files.forEach((file) => {
       formData.append("file", file);
@@ -104,6 +145,8 @@ const CreateOrder = () => {
         setError("")
         setrole("")
         setTargetDepartment("")
+        setIsMaintenance(false)
+        setAssetSubCategory("")
       }else{
         setError("the file/Request was not sent please Refresh Page")
         
@@ -276,6 +319,53 @@ const CreateOrder = () => {
                 </div>
             )}
            
+
+            {isWasteMgt && (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isMaintenance"
+                    checked={isMaintenance}
+                    onChange={(e) => {
+                      setIsMaintenance(e.target.checked);
+                      if (!e.target.checked) setAssetSubCategory("");
+                    }}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isMaintenance" className="ml-2 block text-sm font-medium text-gray-700">
+                    This is a maintenance request for a waste-management asset
+                  </label>
+                </div>
+
+                {isMaintenance && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Asset Sub-Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={assetSubCategory}
+                      onChange={(e) => setAssetSubCategory(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg bg-white"
+                      required
+                    >
+                      <option value="">Select the asset being maintained</option>
+                      {assetSubCategories.map((sc) => (
+                        <option key={sc} value={sc}>{sc}</option>
+                      ))}
+                    </select>
+                    {assetSubCategories.length === 0 && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        No asset sub-categories found. Add them in Asset Management first.
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Once this request is fully approved, its total is added to this asset's maintenance expenditure.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <label className="block mb-2">Urgency</label>
             <select

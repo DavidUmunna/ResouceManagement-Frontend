@@ -12,6 +12,12 @@ node_modules/
 src/__tests__
 __mocks__
 /test
+# ignore all test files wherever they live
+**/__tests__/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
 
 
 # production

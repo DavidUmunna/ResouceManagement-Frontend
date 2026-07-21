@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { formatDate } from "./userDetails.utils";
+import { formatDate, timeAgo } from "./userDetails.utils";
 
 export const OrderList = ({ orders, isExpanded }) => (
   <motion.div
@@ -27,8 +27,9 @@ export const OrderList = ({ orders, isExpanded }) => (
                 <p className="font-medium text-gray-800">#{req.orderNumber}</p>
                 <p className="text-sm text-gray-600">{req.Title}</p>
               </div>
-              <span className="text-xs text-gray-500">
-                {formatDate(req.createdAt)}
+              <span className="text-right">
+                <span className="block text-xs text-gray-500">{formatDate(req.createdAt)}</span>
+                <span className="block text-[11px] text-gray-400">{timeAgo(req.createdAt)}</span>
               </span>
             </motion.li>
           ))}
