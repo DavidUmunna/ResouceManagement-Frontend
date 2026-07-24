@@ -346,7 +346,7 @@ const CreateOrder = () => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isMaintenance" className="ml-2 block text-sm font-medium text-gray-700">
-                    This is a maintenance request for a waste-management asset
+                    This is a maintenance request for a department asset
                   </label>
                 </div>
 
