@@ -1002,14 +1002,14 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                         .filter(
                                           (statusOption) =>
 
-                                            statusOption !== "Completed" || user?.Department === "accounts_dep" 
-                                            
-                                          
+                                            statusOption !== "Completed" || accRoles?.includes(user?.Department)
+
+
                                         ).filter(
                                             (statusOption) =>
 
 
-                                            statusOption !== "Awaiting Funding" || user?.Department==="accounts_dep"
+                                            statusOption !== "Awaiting Funding" || accRoles?.includes(user?.Department)
                                         )
                                         .map((statusOption) => (
                                           <div
@@ -1039,10 +1039,10 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                               {statusOption === "More Information" && (
                                                 <FaInfoCircle className="text-black" />
                                               )}
-                                              {statusOption === "Completed" && user?.Department === "accounts_dep" && (
+                                              {statusOption === "Completed" && accRoles?.includes(user?.Department) && (
                                                 <FaCheck className="text-blue-500" />
                                               )}
-                                              {(statusOption === "Awaiting Funding" && user?.Department==="accounts_dep") && (
+                                              {(statusOption === "Awaiting Funding" && accRoles?.includes(user?.Department)) && (
                                                 <FaMoneyBillWave className="text-amber-600" />
                                               )}
 

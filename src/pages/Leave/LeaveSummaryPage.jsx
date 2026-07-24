@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useUser } from '../../components/usercontext';
 import { getLeaveRequests, getUserBalance } from '../../services/leaveService';
+import { fetch_RBAC_leave } from '../../services/rbac_service';
 import InfoModal from '../../components/InfoModal';
 
 const SUMMARY_INSTRUCTIONS = [
@@ -32,7 +33,6 @@ const SUMMARY_INSTRUCTIONS = [
   },
 ];
 
-const ALLOWED_ROLES = ['Director', 'global_admin'];
 const LEAVE_TYPES   = ['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid'];
 
 const STATUS_STYLES = {
@@ -148,8 +148,19 @@ export default function LeaveSummaryPage() {
   const [reqPage, setReqPage]           = useState(1);
   const USER_PAGE_SIZE = 6;
   const REQ_PAGE_SIZE  =10;
+  const [allowedRoles, setAllowedRoles] = useState(null);
 
-  const canView = ALLOWED_ROLES.includes(user?.role);
+  // RBAC is the source of truth for who may view the leave summary
+  useEffect(() => {
+    const loadRoles = async () => {
+      const res = await fetch_RBAC_leave();
+      setAllowedRoles(res?.data?.data?.LEAVE_SUMMARY_ROLES || []);
+    };
+    loadRoles();
+  }, []);
+
+  const rolesLoaded = Array.isArray(allowedRoles);
+  const canView = rolesLoaded && allowedRoles.includes(user?.role);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -213,6 +224,14 @@ export default function LeaveSummaryPage() {
       return true;
     });
   }, [users, search, statusFilter, userStats]);
+
+  if (!rolesLoaded) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-[40vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
 
   if (!canView) {
     return (

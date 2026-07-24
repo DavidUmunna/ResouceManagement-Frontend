@@ -1,12 +1,25 @@
 // frontend/src/hooks/useFeedback.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { apiService } from '../services/api.services';
 import { useUser } from '../../../components/usercontext';
+import { fetch_RBAC_feedback } from '../../../services/rbac_service';
 export const useFeedback = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackAdminRoles, setFeedbackAdminRoles] = useState(null);
   const {user}=useUser()
+
+  // RBAC is the source of truth for who may manage all feedback
+  useEffect(() => {
+    const loadRoles = async () => {
+      const res = await fetch_RBAC_feedback();
+      setFeedbackAdminRoles(res?.data?.data?.FEEDBACK_ADMIN_ROLES || []);
+    };
+    loadRoles();
+  }, []);
+
+  const isFeedbackAdmin = Array.isArray(feedbackAdminRoles) && feedbackAdminRoles.includes(user?.role);
   const createFeedback = useCallback(async (data) => {
     setLoading(true);
     setError(null);
@@ -28,17 +41,16 @@ export const useFeedback = () => {
     setError(null);
     
     try {
-      let data ;
-      
-      user.role==="global_admin"? data=await apiService.getAllFeedback(filter):
-      data=await apiService.getFeedbackById(user.userId)
+      const data = isFeedbackAdmin
+        ? await apiService.getAllFeedback(filter)
+        : await apiService.getFeedbackById(user.userId);
       setFeedbacks(data);
     } catch (err) {
       setError(err.message || 'Failed to load feedbacks');
     } finally {
       setLoading(false);
     }
-  }, [user?.role, user?.userId]);
+  }, [isFeedbackAdmin, user?.userId]);
   
   const updateStatus = useCallback(async (id, status) => {
     setLoading(true);
@@ -76,6 +88,7 @@ export const useFeedback = () => {
     loading,
     error,
     feedbacks,
+    canManage: isFeedbackAdmin,
     createFeedback,
     loadFeedbacks,
     updateStatus,

@@ -14,6 +14,7 @@ import ActionModal from './ActionModal';
 import EntitlementEditor from './EntitlementEditor';
 import InfoModal from '../../../components/InfoModal';
 import { DeleteConfirmationModal } from '../../../components/DeleteConfirmationModal';
+import { fetch_RBAC_leave } from '../../../services/rbac_service';
 import axios from 'axios';
 
 const LEAVE_TYPES = ['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid'];
@@ -67,9 +68,19 @@ export default function AdminLeavePanel() {
   const [users, setUsers] = useState([]);
   const [showInfo, setShowInfo] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [adminRoles, setAdminRoles] = useState(null);
 
-  const ADMIN_ROLES = ['admin', 'global_admin'];
-  const isAdmin = ADMIN_ROLES.includes(user?.role);
+  // RBAC is the source of truth for who may administer leave
+  useEffect(() => {
+    const loadRoles = async () => {
+      const res = await fetch_RBAC_leave();
+      setAdminRoles(res?.data?.data?.LEAVE_ADMIN_ROLES || []);
+    };
+    loadRoles();
+  }, []);
+
+  const rolesLoaded = Array.isArray(adminRoles);
+  const isAdmin = rolesLoaded && adminRoles.includes(user?.role);
 
   const loadRequests = useCallback(async (params = {}) => {
     setLoadingReqs(true);
@@ -165,6 +176,14 @@ export default function AdminLeavePanel() {
       toast.error(err?.response?.data?.message || 'Failed to delete request');
     }
   };
+
+  if (!rolesLoaded) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-[40vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (

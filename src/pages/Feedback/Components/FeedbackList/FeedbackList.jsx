@@ -6,7 +6,8 @@ export const FeedbackList = ({
   feedbacks,
   onStatusUpdate,
   onDelete,
-  loading = false
+  loading = false,
+  canManage = false
 }) => {
   if (loading) {
     return (
@@ -35,6 +36,7 @@ export const FeedbackList = ({
           feedback={feedback}
           onStatusUpdate={onStatusUpdate}
           onDelete={onDelete}
+          canManage={canManage}
         />
       ))}
     </div>

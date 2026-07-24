@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { createOrder } from "../services/OrderService";
+import { fetch_RBAC_maintenance } from "../services/rbac_service";
 import { FileText, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "../components/usercontext";
 import { FiInfo } from "react-icons/fi";
-
-const WASTE_MGT_DEPARTMENT = "waste_management_dep";
-const ASSET_CATEGORY = "waste_management";
 
 const containerVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -43,8 +41,12 @@ const CreateOrder = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [assetSubCategory, setAssetSubCategory] = useState("");
   const [assetSubCategories, setAssetSubCategories] = useState([]);
+  const [maintenanceAccess, setMaintenanceAccess] = useState({ departments: [], categoryByDepartment: {} });
 
-  const isWasteMgt = user?.Department === WASTE_MGT_DEPARTMENT;
+  // Backend (RBAC) is the source of truth for which departments may raise
+  // maintenance requests and the asset category each maps to.
+  const canRaiseMaintenance = maintenanceAccess.departments.includes(user?.Department);
+  const assetCategory = maintenanceAccess.categoryByDepartment[user?.Department];
 
   useEffect(() => {
     if (user) {
@@ -54,15 +56,25 @@ const CreateOrder = () => {
     }
   }, [user]);
 
-  // Load the waste-management asset sub-categories so a maintenance request
-  // can be tied to the asset type it applies to.
+  // Fetch the maintenance access rules from RBAC
   useEffect(() => {
-    if (!isWasteMgt || !isMaintenance) return;
+    const loadAccess = async () => {
+      const res = await fetch_RBAC_maintenance();
+      const access = res?.data?.data?.MAINTENANCE_ASSET_ACCESS;
+      if (access) setMaintenanceAccess(access);
+    };
+    loadAccess();
+  }, []);
+
+  // Load the asset sub-categories so a maintenance request can be tied to the
+  // asset type it applies to.
+  useEffect(() => {
+    if (!canRaiseMaintenance || !isMaintenance || !assetCategory) return;
     const fetchSubCategories = async () => {
       try {
         const API_URL = `${process.env.REACT_APP_API_URL}/api`;
         const res = await axios.get(`${API_URL}/assets/subcategories`, {
-          params: { category: ASSET_CATEGORY },
+          params: { category: assetCategory },
           headers: { "ngrok-skip-browser-warning": "true" },
           withCredentials: true,
         });
@@ -72,7 +84,7 @@ const CreateOrder = () => {
       }
     };
     fetchSubCategories();
-  }, [isWasteMgt, isMaintenance]);
+  }, [canRaiseMaintenance, isMaintenance, assetCategory]);
 
   const handleFileChange = (event) => {
     const uploadedFiles = event.target.files ? Array.from(event.target.files) : [];
@@ -112,13 +124,13 @@ const CreateOrder = () => {
       payload.targetDepartment=targetDepartment
     }
 
-    if (isWasteMgt && isMaintenance) {
+    if (canRaiseMaintenance && isMaintenance) {
       if (!assetSubCategory) {
         setError("Please select the asset sub-category for this maintenance request.");
         return;
       }
       payload.isMaintenance = true;
-      payload.assetCategory = ASSET_CATEGORY;
+      payload.assetCategory = assetCategory;
       payload.assetSubCategory = assetSubCategory;
     }
 
@@ -320,7 +332,7 @@ const CreateOrder = () => {
             )}
            
 
-            {isWasteMgt && (
+            {canRaiseMaintenance && (
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center">
                   <input
