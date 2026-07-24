@@ -3,22 +3,12 @@ import * as Sentry from "@sentry/react"
 import { isProd } from "../components/env";
 
 
+// Pass-through interceptor. The automatic redirect to /adminlogin on network
+// errors was removed because it caused a full-page reload loop when the API was
+// briefly unreachable. Auth failures (401/403) are handled per-request instead.
 axios.interceptors.response.use(
   response => response,
-  error => {
-    const excludedurls=[
-      "/api/access",
-      "/api/admin-user/login",
-      "/api/csrf-token"
-    ]
-    const request_url=error?.config.url ||""
-
-    const shouldHandlerrors=!excludedurls.some(ex=>request_url.includes(ex))
-    if (!error.response && shouldHandlerrors) {
-      window.location.href = "/adminlogin";
-    }
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 export const fetch_RBAC_ALL=async()=>{
       try{
@@ -162,8 +152,73 @@ export const fetch_RBAC_department=async()=>{
     }else{
       
       if (isProd)Sentry.captureException(error);
-     
+
     }
   }
 }
 
+export const fetch_RBAC_maintenance=async()=>{
+  try{
+    const token = localStorage.getItem('sessionId');
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`
+    const rbacRes=await axios.post(`${API_URL}/roles&departments`,{MAINTENANCE_ASSET_ACCESS:true},{headers: {
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+        withCredentials: true,
+      })
+    return rbacRes
+  }catch(error){
+    if (error.message === "Network Error" || error.code === "ERR_NETWORK"){
+      window.location.href = '/adminlogin';
+    }else if (error.response?.status===401|| error.response?.status===403){
+      window.location.href = '/adminlogin';
+    }else{
+      if (isProd)Sentry.captureException(error);
+    }
+  }
+}
+
+export const fetch_RBAC_leave=async()=>{
+  try{
+    const token = localStorage.getItem('sessionId');
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`
+    const rbacRes=await axios.post(`${API_URL}/roles&departments`,{LEAVE_SUMMARY_ROLES:true,LEAVE_ADMIN_ROLES:true},{headers: {
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+        withCredentials: true,
+      })
+    return rbacRes
+  }catch(error){
+    if (error.message === "Network Error" || error.code === "ERR_NETWORK"){
+      window.location.href = '/adminlogin';
+    }else if (error.response?.status===401|| error.response?.status===403){
+      window.location.href = '/adminlogin';
+    }else{
+      if (isProd)Sentry.captureException(error);
+    }
+  }
+}
+
+export const fetch_RBAC_feedback=async()=>{
+  try{
+    const token = localStorage.getItem('sessionId');
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`
+    const rbacRes=await axios.post(`${API_URL}/roles&departments`,{FEEDBACK_ADMIN_ROLES:true},{headers: {
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "true",
+        },
+        withCredentials: true,
+      })
+    return rbacRes
+  }catch(error){
+    if (error.message === "Network Error" || error.code === "ERR_NETWORK"){
+      window.location.href = '/adminlogin';
+    }else if (error.response?.status===401|| error.response?.status===403){
+      window.location.href = '/adminlogin';
+    }else{
+      if (isProd)Sentry.captureException(error);
+    }
+  }
+}

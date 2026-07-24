@@ -14,7 +14,8 @@ function App() {
     createFeedback,
     loadFeedbacks,
     updateStatus,
-    deleteFeedback
+    deleteFeedback,
+    canManage
   } = useFeedback();
 
   const { stats, loading: statsLoading, refreshStats } = useStats();
@@ -104,6 +105,7 @@ function App() {
                 onStatusUpdate={handleStatusUpdate}
                 onDelete={handleDelete}
                 loading={feedbackLoading}
+                canManage={canManage}
               />
             </div>
           )}

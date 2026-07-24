@@ -8,8 +8,46 @@ import AssetsConditionChart from './Asssetvisuals';
 import axios from 'axios';
 import {toast} from "react-toastify"
 import PaginationControls from '../../components/Paginationcontrols';
+import Pagination from '../../components/Pagination';
 import { isProd } from "../../components/env";
 import AssetExportModal from "./AssetExport";
+import InfoModal from "../../components/InfoModal";
+import { CONDITION_STYLES, formatCurrency, formatDate } from "./assetUtils";
+
+const ASSET_INSTRUCTIONS = [
+  {
+    heading: 'Viewing Assets',
+    items: [
+      'All assets are listed in the table. Click the chevron on a row to expand it and see the SKU, location, and description.',
+      'Use the search box to filter by name, description, condition, or location.',
+      'Use the category dropdown to narrow the list to a specific asset category.',
+      'Click any column header to sort the table by that field.',
+    ],
+  },
+  {
+    heading: 'Adding & Editing Assets',
+    items: [
+      'Click "Add Asset Item" to open the form and register a new asset.',
+      'Fill in the name, category, quantity, monetary value, condition, location, and an optional description.',
+      'To update an existing asset, click the edit (pencil) icon on its row — the same form reopens pre-filled.',
+      'Click "Save Item" / "Update Item" to confirm, or "Cancel" to discard changes.',
+    ],
+  },
+  {
+    heading: 'Deleting & Exporting',
+    items: [
+      'Click the delete (trash) icon on a row to permanently remove that asset.',
+      'Use the "Excel Export" button to download asset data as a spreadsheet.',
+    ],
+  },
+  {
+    heading: 'Analytics (Admin)',
+    items: [
+      'The charts on the right show a category breakdown and condition distribution of your assets.',
+      'These panels are only visible to users with admin-level access.',
+    ],
+  },
+];
 
 const AssetManagement = ({setAuth}) => {
   const { user } = useUser();
@@ -24,15 +62,15 @@ const AssetManagement = ({setAuth}) => {
     });
   // State
   const [AssetItems, setAssetItems] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
+    subCategory: '',
     quantity: 1,
     condition: 'New',
     description: '',
-    
-    location:'',
-    
+    location: '',
     value: 0
   });
   const [editingItem, setEditingItem] = useState(null);
@@ -44,8 +82,15 @@ const AssetManagement = ({setAuth}) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
   const [showmodal,setshowmodal]=useState(false)
+  const [showInfo,setShowInfo]=useState(false)
   const [ADMIN_ROLES_ASSET_MANAGEMENT,set_ADMIN_ROLES_ASSET_MANAGEMENT]=useState([])
   const [Error,setError]=useState("")
+  // Maintenance expenditure date filter (null filteredExp = show all-time)
+  const [expStart, setExpStart] = useState('');
+  const [expEnd, setExpEnd] = useState('');
+  const [filteredExp, setFilteredExp] = useState(null);
+  const [expPage, setExpPage] = useState(1);
+  const EXP_PAGE_SIZE = 5;
 
   // Fetch Asset data
   const fetchData = async (page=data.pagination?.page,limit=data.pagination?.limit) => {
@@ -53,29 +98,17 @@ const AssetManagement = ({setAuth}) => {
       setLoading(true)
       const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
-      const [AssetRes, statsRes, categoriesRes] = await Promise.all([
-        axios.get(`${API_URL}/assets`, { params:{page,limit},
-            headers: {
-              "x-session-id":token,
-              "ngrok-skip-browser-warning": "true",
-            },
-            withCredentials: true,
-          }),
-          axios.get(`${API_URL}/assets/stats`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "true",
-            },
-            withCredentials: true,
-          }),
-          axios.get(`${API_URL}/assets/categories`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "ngrok-skip-browser-warning": "true",
-            },
-            withCredentials: true,
-          }),
-        ]);
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "x-session-id": token,
+        "ngrok-skip-browser-warning": "true",
+      };
+      const [AssetRes, statsRes, categoriesRes, subCategoriesRes] = await Promise.all([
+        axios.get(`${API_URL}/assets`, { params: { page, limit }, headers, withCredentials: true }),
+        axios.get(`${API_URL}/assets/stats`, { headers, withCredentials: true }),
+        axios.get(`${API_URL}/assets/categories`, { headers, withCredentials: true }),
+        axios.get(`${API_URL}/assets/subcategories`, { headers, withCredentials: true }),
+      ]);
         setData({
           orders: AssetRes.data.data,
           pagination: AssetRes.data.Pagination
@@ -83,6 +116,7 @@ const AssetManagement = ({setAuth}) => {
         setAssetItems(AssetRes.data.data);
         setStats(statsRes.data.data);
         setCategories(categoriesRes.data.data);
+        setSubCategories(subCategoriesRes.data.data?.subCategories || []);
         
       } catch (err) {  // add `: any` if you want better type safety
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -171,6 +205,33 @@ const AssetManagement = ({setAuth}) => {
     });
   };
 
+  const applyExpFilter = async () => {
+    setExpPage(1);
+    if (!expStart && !expEnd) {
+      setFilteredExp(null);
+      return;
+    }
+    try {
+      const token = localStorage.getItem('sessionId');
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      const res = await axios.get(`${API_URL}/assets/expenditure`, {
+        params: { startDate: expStart || undefined, endDate: expEnd || undefined },
+        headers: { Authorization: `Bearer ${token}`, "ngrok-skip-browser-warning": "true" },
+        withCredentials: true,
+      });
+      setFilteredExp(res.data?.data || { expenditureBySubCategory: [], totalExpenditure: 0 });
+    } catch (err) {
+      if (isProd) Sentry.captureException(err);
+    }
+  };
+
+  const clearExpFilter = () => {
+    setExpStart('');
+    setExpEnd('');
+    setFilteredExp(null);
+    setExpPage(1);
+  };
+
   const handlePageChange = (newPage) => {
     fetchData(newPage, data.pagination?.limit);
   };
@@ -182,7 +243,9 @@ const AssetManagement = ({setAuth}) => {
 /*const handleExpand = (id) => {
   setExpandedItem((prev) => (prev === id ? null : id));
 };*/
-  if (loading) {
+  // Only take over the whole screen on the very first load; subsequent
+  // refetches (pagination) dim the table instead of replacing the page.
+  if (loading && AssetItems.length === 0) {
     return <div className="p-8 flex justify-center items-center min-h-screen">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
@@ -222,7 +285,6 @@ const AssetManagement = ({setAuth}) => {
     e.preventDefault();
     try {
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
-      const token = localStorage.getItem("sessionId");
       const res = await axios.put(`${API_URL}/assets/${editingItem._id}`, formData, {
        withCredentials:true
       });
@@ -258,9 +320,11 @@ const AssetManagement = ({setAuth}) => {
     setFormData({
       name: '',
       category: '',
+      subCategory: '',
       quantity: 1,
       condition: 'New',
       description: '',
+      location: '',
       value: 0
     });
   };
@@ -270,10 +334,11 @@ const AssetManagement = ({setAuth}) => {
     setFormData({
       name: item.name,
       category: item.category,
+      subCategory: item.subCategory || '',
       quantity: item.quantity,
       condition: item.condition,
       description: item.description || '',
-      location:item.location,
+      location: item.location || '',
       value: item.value || 0
     });
     setShowForm(true);
@@ -286,6 +351,9 @@ const AssetManagement = ({setAuth}) => {
     }
     setSortConfig({ key, direction });
   };
+
+  const sortArrow = (key) =>
+    sortConfig.key === key ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '';
   
 
   const toggleItem = (id) => {
@@ -297,7 +365,24 @@ const AssetManagement = ({setAuth}) => {
   return (
     <div className="w-full p-6 bg-gray-50 rounded-lg shadow-sm mt-12">
       {/* Header and Controls */}
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Asset Management</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Asset Management</h1>
+        <button
+          onClick={() => setShowInfo(true)}
+          className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-blue-300 text-blue-500 hover:bg-blue-50 hover:border-blue-400 transition flex items-center justify-center text-sm font-bold"
+          aria-label="How to use this page"
+        >
+          i
+        </button>
+      </div>
+
+      {showInfo && (
+        <InfoModal
+          title="How to use Asset Management"
+          sections={ASSET_INSTRUCTIONS}
+          onClose={() => setShowInfo(false)}
+        />
+      )}
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -406,6 +491,23 @@ const AssetManagement = ({setAuth}) => {
                   <option disabled>No categories available</option>
                 )}
                 </select>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub-Category</label>
+                  <input
+                    type="text"
+                    name="subCategory"
+                    list="asset-subcategories"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    placeholder="Optional — e.g. Laptops, Chairs"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                  <datalist id="asset-subcategories">
+                    {subCategories.map((sc) => (
+                      <option key={sc} value={sc} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -453,10 +555,10 @@ const AssetManagement = ({setAuth}) => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">location</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                     <input
                       type="text"
-                      name="location.warehouse"
+                      name="location"
                       value={formData.location}
                       onChange={handleInputChange}
                       className="w-full p-2 border border-gray-300 rounded-lg"
@@ -518,106 +620,227 @@ const AssetManagement = ({setAuth}) => {
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500">Total Value</h3>
           <p className="text-2xl font-bold text-gray-800">
-            ₦{stats.totalvalue ? stats.totalvalue.toLocaleString() : 0}
+            ₦{stats.totalValue ? stats.totalValue.toLocaleString() : 0}
           </p>
         </div>
       </div>)}
 
+      {/* Maintenance expenditure by asset sub-category */}
+      {(() => {
+        const expData = filteredExp || {
+          expenditureBySubCategory: stats.expenditureBySubCategory,
+          totalExpenditure: stats.totalExpenditure,
+        };
+        const rows = Array.isArray(expData.expenditureBySubCategory) ? expData.expenditureBySubCategory : [];
+        // Show the panel if there is any all-time expenditure, or a filter is active
+        if (rows.length === 0 && !filteredExp) return null;
+
+        const totalExpPages = Math.ceil(rows.length / EXP_PAGE_SIZE);
+        const pagedRows = rows.slice((expPage - 1) * EXP_PAGE_SIZE, expPage * EXP_PAGE_SIZE);
+
+        return (
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">Maintenance Expenditure by Sub-Category</h3>
+              <span className="text-sm font-bold text-gray-800">
+                Total{filteredExp ? ' (filtered)' : ''}: {formatCurrency(expData.totalExpenditure)}
+              </span>
+            </div>
+
+            {/* Date filter for the total */}
+            <div className="flex flex-wrap items-end gap-2 mb-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">From</label>
+                <input
+                  type="date"
+                  value={expStart}
+                  onChange={(e) => setExpStart(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">To</label>
+                <input
+                  type="date"
+                  value={expEnd}
+                  onChange={(e) => setExpEnd(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                />
+              </div>
+              <button
+                onClick={applyExpFilter}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+              >
+                Apply
+              </button>
+              {filteredExp && (
+                <button
+                  onClick={clearExpFilter}
+                  className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Sub-Category</th>
+                    <th className="px-4 py-2 text-left font-medium">Orders</th>
+                    <th className="px-4 py-2 text-left font-medium">Last Expense</th>
+                    <th className="px-4 py-2 text-right font-medium">Expenditure</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
+                        No expenditure in this period
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedRows.map((e) => (
+                      <tr key={`${e.category}-${e.subCategory}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-medium text-gray-800">{e.subCategory}</td>
+                        <td className="px-4 py-2 text-gray-500">{e.orderCount}</td>
+                        <td className="px-4 py-2 text-gray-500">{formatDate(e.lastExpenseAt)}</td>
+                        <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(e.totalExpenditure)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              page={expPage}
+              totalPages={totalExpPages}
+              total={rows.length}
+              limit={EXP_PAGE_SIZE}
+              onPage={setExpPage}
+            />
+          </div>
+        );
+      })()}
+
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="flex-1 min-w-0">
           {/* Assets Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+          <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-opacity ${loading ? 'opacity-60 pointer-events-none' : ''}`}>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {/* Table headers */}
-                    <th onClick={() => requestSort('name')}>Asset Name/Type</th>
-                    <th onClick={() => requestSort('category')}>Category</th>
-                    <th onClick={() => requestSort('quantity')}>Quantity</th>
-                    <th onClick={() => requestSort('condition')}>Condition</th>
-                    <th onClick={() => requestSort('value')}>Value</th>
-                    <th onClick={() => requestSort('lastUpdated')}>Last Updated</th>
-                    <th>Actions</th>
+                    {[
+                      { key: 'name', label: 'Asset Name/Type' },
+                      { key: 'category', label: 'Category' },
+                      { key: 'quantity', label: 'Quantity' },
+                      { key: 'condition', label: 'Condition' },
+                      { key: 'value', label: 'Value' },
+                      { key: 'lastUpdated', label: 'Last Updated' },
+                    ].map(({ key, label }) => (
+                      <th
+                        key={key}
+                        onClick={() => requestSort(key)}
+                        className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          <span className="text-[10px] text-blue-500">{sortArrow(key)}</span>
+                        </span>
+                      </th>
+                    ))}
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200 ">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                        No Assets items found
+                      <td colSpan="7" className="px-6 py-10 text-center text-gray-500">
+                        No asset items found
                       </td>
                     </tr>
                   ) : (
                     filteredItems.map((item) => (
                       <React.Fragment key={item._id}>
-
-                      <tr key={item._id} className="hover:bg-gray-50">
-                        {/* Table cells */}
+                      <tr className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <button onClick={() => toggleItem(item._id)}>
+                            <button
+                              onClick={() => toggleItem(item._id)}
+                              className="text-gray-400 hover:text-gray-600 mr-2"
+                              aria-label={expandedItem === item._id ? 'Collapse' : 'Expand'}
+                            >
                               {expandedItem === item._id ? <FiChevronUp /> : <FiChevronDown />}
                             </button>
-                            <div className="ml-2">{item.name}</div>
+                            <span className="font-medium text-gray-800">{item.name}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="category-badge">{item.category}</span>
+                          <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                            {formatCategory(item.category)}
+                          </span>
                         </td>
-                        <td className="px-6 py-4">{item.quantity}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{item.quantity}</td>
                         <td className="px-6 py-4">
-                          <span className={`condition-badge ${item.condition}`}>
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${CONDITION_STYLES[item.condition] || 'bg-gray-100 text-gray-700'}`}>
                             {item.condition}
                           </span>
                         </td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-800">{formatCurrency(item.value)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{formatDate(item.lastUpdated)}</td>
                         <td className="px-6 py-4">
-                          <span className={`condition-badge ${item.condition}`}>
-                            {item.value}
-                          </span>
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => setupEdit(item)}
+                              className="text-blue-600 hover:text-blue-800 transition-colors"
+                              aria-label="Edit"
+                            >
+                              <FiEdit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => deleteItem(item._id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                              aria-label="Delete"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
                         </td>
-                        <td className="px-6 py-4">{item.lastUpdated.split("T")[0]}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button onClick={() => setupEdit(item)}>
-                            <FiEdit2 className="edit-icon" />
-                          </button>
-                          <button onClick={() => deleteItem(item._id)}>
-                            <FiTrash2 className="delete-icon" />
-                          </button>
-                        </td>
-                        
                       </tr>
-                      {expandedItem===item._id&&(
-                    <tr>
-                     
-                     <td colSpan="6" className="px-6 py-4 bg-gray-50">
-                       <div className="grid grid-cols-2 gap-4">
-                         <div>
-                           <h4 className="font-medium">SKU:</h4>
-                           <p>{item.sku || 'Not specified'}</p>
-                         </div>
-                         <div>
-                           <h4 className="font-medium">Location:</h4>
-                           <p>{item?.location || 'Not specified'}</p>
-                         </div>
-                         <div>
-                           <h4 className="font-medium">Description:</h4>
-                           <p>{item.description || 'No description'}</p>
-                         </div>
-                       </div>
-                     </td>
-                   </tr>
-                  )}
-                 </React.Fragment>
+                      {expandedItem === item._id && (
+                        <tr>
+                          <td colSpan="7" className="px-6 py-4 bg-gray-50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <h4 className="font-medium text-gray-700">SKU</h4>
+                                <p className="text-gray-600">{item.sku || 'Not specified'}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-700">Sub-Category</h4>
+                                <p className="text-gray-600">{item.subCategory || 'Not specified'}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-700">Location</h4>
+                                <p className="text-gray-600">{item?.location || 'Not specified'}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-700">Description</h4>
+                                <p className="text-gray-600">{item.description || 'No description'}</p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     )))}
                 </tbody>
               </table>
-              </div>
-          
-            {/* Expanded row details */}
-           
-          </div>
+            </div>
           </div>
            <div>
               {/* Your data display */}
@@ -635,12 +858,12 @@ const AssetManagement = ({setAuth}) => {
 
         {/* Analytics */}
         {ADMIN_ROLES_ASSET_MANAGEMENT.includes(user.role) && (
-          <div className=" hidden lg:block lg:w-1/3 lg:w-[250px] flex-shrink-0">
+          <div className="w-full lg:w-80 flex-shrink-0">
             <div className="flex flex-col gap-4">
-              <div className="  flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200 p-2">
                 <Assetsanalysis AssetItems={AssetItems} />
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 ">
+              <div className="bg-white rounded-lg border border-gray-200 p-2">
                 <AssetsConditionChart AssetItems={AssetItems} />
               </div>
             </div>
@@ -648,10 +871,14 @@ const AssetManagement = ({setAuth}) => {
         )}
       </div>
 
-      {Error}
+      {Error && (
+        <div className="mt-4 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+          {Error}
+        </div>
+      )}
       {showmodal && (
-        <AssetExportModal 
-          onClose={() => setshowmodal(false)} 
+        <AssetExportModal
+          onClose={() => setshowmodal(false)}
           setLoading={setLoading}
         />
       )}

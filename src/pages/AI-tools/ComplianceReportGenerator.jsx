@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { generateReport } from "../../../services/aiService";
+import { generateReport } from "../../services/aiService";
 import { toast } from "react-hot-toast";
+import AiResponsePanel from "./AiResponsePanel";
 
 const ComplianceReportGenerator = () => {
   const [formData, setFormData] = useState({
@@ -26,10 +27,20 @@ const ComplianceReportGenerator = () => {
     setError("");
     setReport("");
     try {
-      const response = await generateReport(formData);
-      // assume backend returns markdown string or an object with a markdown property
-      const markdown = typeof response === "string" ? response : response?.markdown || JSON.stringify(response, null, 2);
-      setReport(markdown);
+      // Map form fields to what the backend controller expects
+      const payload = {
+        scope: `${formData.site}${formData.date ? ` — ${formData.date}` : ''}`,
+        findings: formData.results,
+        region: formData.site,
+        deadlines: [],
+        notes: [
+          formData.operations  && `Operations: ${formData.operations}`,
+          formData.incidents   && `Incidents: ${formData.incidents}`,
+          formData.regulations && `Regulations/Standards: ${formData.regulations}`,
+        ].filter(Boolean).join('\n\n'),
+      };
+      const response = await generateReport(payload);
+      setReport(response);
       toast.success("AI analysis complete");
     } catch (err) {
       const message = err.message || "Failed to generate report.";
@@ -183,13 +194,7 @@ const ComplianceReportGenerator = () => {
             </button>
           </div>
         </div>
-        {report ? (
-          <pre className="whitespace-pre-wrap break-words bg-white border border-gray-200 rounded-md p-3 text-sm text-gray-800 shadow-inner">
-{report}
-          </pre>
-        ) : (
-          <p className="text-sm text-gray-500">Generate a report to see it here.</p>
-        )}
+        <AiResponsePanel data={report} emptyText="Generate a report to see it here." />
       </div>
     </div>
   );

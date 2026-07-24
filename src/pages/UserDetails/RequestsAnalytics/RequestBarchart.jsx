@@ -1,7 +1,7 @@
 // components/PurchaseOrderBarChart.js
 import React, { useState,useEffect } from 'react';
 import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS } from 'chart.js/auto';
+import 'chart.js/auto';
 import axios from 'axios';
 import { useUser } from '../../../components/usercontext';
 const RequestBarChart = ({DepartmentalAccess=[],GeneralAccess=[]}) => {
@@ -9,7 +9,6 @@ const RequestBarChart = ({DepartmentalAccess=[],GeneralAccess=[]}) => {
   const [viewMode, setViewMode] = useState('daily');
   const [displayMetric, setDisplayMetric] = useState('count'); // 'count' or 'value'
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [Loading, setLoading]=useState(false)
 
   
   useEffect(() => {
@@ -37,13 +36,11 @@ const RequestBarChart = ({DepartmentalAccess=[],GeneralAccess=[]}) => {
         setAnalyticsData(data.data);
       } catch (error) {
         console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
-  }, [viewMode]);
+  }, [viewMode, DepartmentalAccess, GeneralAccess, user?.Department, user?.role, user?.userId]);
 
   const chartData = {
     labels: analyticsData?.chartData.map(item => item.date),

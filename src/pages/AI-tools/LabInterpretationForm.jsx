@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { interpretLabResults } from "../../../services/aiService";
+import { interpretLabResults } from "../../services/aiService";
 import { toast } from "react-hot-toast";
+import AiResponsePanel from "./AiResponsePanel";
 
 const LabInterpretationForm = () => {
   const [formData, setFormData] = useState({
@@ -171,17 +172,9 @@ const LabInterpretationForm = () => {
         </div>
       </form>
 
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-gray-200 rounded-lg p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">Gemini Results</h3>
-        {result ? (
-          <div className="bg-white border border-gray-200 rounded-md p-3 text-sm text-gray-800 shadow-inner">
-            <pre className="whitespace-pre-wrap break-words text-xs">
-{JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">Submit lab values to see AI interpretation.</p>
-        )}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Interpretation</h3>
+        <AiResponsePanel data={result} emptyText="Submit lab values to see AI interpretation." />
       </div>
     </div>
   );

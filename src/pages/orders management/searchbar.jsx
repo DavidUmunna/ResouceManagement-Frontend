@@ -49,7 +49,7 @@ const Searchbar = () => {
             </div>
 
   }
-  console.log("from search  ",user)
+
 
   const hasActiveFilters = () => {
     return (

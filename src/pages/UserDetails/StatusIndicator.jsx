@@ -1,11 +1,10 @@
 import React from 'react';
 import { colorPalette } from './enterpriseUI.constants';
-import { 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  ClipboardCheck, 
-  InfoIcon
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  ClipboardCheck,
 } from "lucide-react";
 export const StatusIndicator = ({ status, count }) => {
   const statusConfig = {
@@ -29,11 +28,6 @@ export const StatusIndicator = ({ status, count }) => {
       icon: <ClipboardCheck className="w-5 h-5" />,
       label: 'Completed'
     },
-    MoreInformation:{
-        color:colorPalette.primary,
-        icon:<InfoIcon className="w-5 h-5"/>,
-        label:'More Info'
-    }
   };
 
   const config = statusConfig[status] || statusConfig.pending;

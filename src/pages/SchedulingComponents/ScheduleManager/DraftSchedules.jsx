@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from 'react-query';
 import { useEffect,useState } from 'react';
 import axios from 'axios';
-import { data, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import * as Sentry from "@sentry/react"
 import { FaTrash } from 'react-icons/fa';
@@ -12,9 +12,7 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
   const [filteredSchedules, setFilteredSchedules]=useState([])
   const { 
   data: drafts, 
-  isLoading, 
-  isError,
-  error 
+  isLoading
 } = useQuery(
   ['draftSchedules', refreshKey],
   async () => {
@@ -29,12 +27,12 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
       
       return response.data;
     } catch (err) {
-       if (error.message === "Network Error") {
+       if (err.message === "Network Error") {
                 window.location.href = '/adminlogin';
-              } else if (error.response?.status === 401 || error.response?.status === 403) {
+              } else if (err.response?.status === 401 || err.response?.status === 403) {
                 window.location.href = '/adminlogin'; 
               } else {
-                Sentry.captureException(error);
+                Sentry.captureException(err);
               }
     }
   },
@@ -69,7 +67,7 @@ const DraftSchedules = ({ refreshKey, onEdit })=>{
   );
    const handleDelete=async(scheduleId)=>{
     try{
-      const response=await axios.delete(`${API}/api/scheduling/disbursement-schedules/${scheduleId}`,{withCredentials:true})
+      await axios.delete(`${API}/api/scheduling/disbursement-schedules/${scheduleId}`,{withCredentials:true})
       
       setFilteredSchedules((prevSchedules) =>
       prevSchedules.filter((schedule) => schedule._id !== scheduleId)

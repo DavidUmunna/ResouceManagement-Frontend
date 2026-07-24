@@ -7,10 +7,11 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Axios request to validate session
+    let isMounted = true;
 
     const AuthProvider=async()=>{
 
@@ -18,10 +19,16 @@ export const UserProvider = ({ children }) => {
         await axios
         .get(`${API}/api/access`, {withCredentials: true }) // include cookies if using httpOnly tokens
         .then((res) => {
-            setUser(res.data.user);
-            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            if (!isMounted) return;
+            setUser(res.data.user || null);
+            if (res.data.user) {
+              sessionStorage.setItem("user", JSON.stringify(res.data.user));
+            } else {
+              sessionStorage.removeItem("user");
+            }
         })
         .catch((err) => {
+          if (!isMounted) return;
           if(isProd){
 
             Sentry.captureMessage("Not authenticated");
@@ -30,18 +37,25 @@ export const UserProvider = ({ children }) => {
             setUser(null);
             sessionStorage.removeItem("user");
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
     }
+
+    AuthProvider();
    
     const Timer=setInterval(()=>{
           AuthProvider();
     },16*60*1000)
-    return ()=>clearInterval(Timer)
+    return ()=>{
+      isMounted = false;
+      clearInterval(Timer)
+    }
 
 }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading }}>
+    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated: !!user }}>
       {children}
     </UserContext.Provider>
   );

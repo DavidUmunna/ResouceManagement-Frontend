@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { optimizeLogistics } from "../../../services/aiService";
+import { optimizeLogistics } from "../../services/aiService";
 import { toast } from "react-hot-toast";
+import AiResponsePanel from "./AiResponsePanel";
 
 const OptimizeLogisticsForm = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +27,20 @@ const OptimizeLogisticsForm = () => {
     setError("");
     setResult(null);
     try {
-      const response = await optimizeLogistics(formData);
+      // Map form fields to what the backend controller expects
+      const locationList = formData.locations.split(',').map(l => l.trim()).filter(Boolean);
+      const payload = {
+        origins:      [locationList[0] ?? 'Depot'],
+        destinations: locationList.slice(1).length ? locationList.slice(1) : locationList,
+        vehicles:     formData.vehicles,
+        constraints: [
+          formData.capacity    && `Capacity per vehicle: ${formData.capacity}`,
+          formData.timeWindows && `Time windows: ${formData.timeWindows}`,
+          formData.traffic     && `Traffic/constraints: ${formData.traffic}`,
+        ].filter(Boolean).join('; '),
+        notes: formData.volumes ? `Volumes: ${formData.volumes}` : undefined,
+      };
+      const response = await optimizeLogistics(payload);
       setResult(response);
       toast.success("AI analysis complete");
     } catch (err) {
@@ -38,39 +52,6 @@ const OptimizeLogisticsForm = () => {
     }
   };
 
-  const renderResult = () => {
-    if (!result) return <p className="text-sm text-gray-500">Submit logistics data to see optimization.</p>;
-
-    // attempt to render structured response if present
-    if (Array.isArray(result?.routes)) {
-      return (
-        <div className="space-y-3">
-          {result.routes.map((route, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-lg p-3 bg-white shadow-inner">
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-semibold text-sm text-gray-800">Route {idx + 1}</p>
-                {route.cost && <span className="text-xs text-gray-500">Cost: {route.cost}</span>}
-              </div>
-              <p className="text-xs text-gray-600">Vehicle: {route.vehicle || "N/A"}</p>
-              {route.stops && (
-                <ul className="mt-2 text-xs text-gray-700 list-disc list-inside space-y-1">
-                  {route.stops.map((stop, sIdx) => (
-                    <li key={sIdx}>{typeof stop === "string" ? stop : JSON.stringify(stop)}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <pre className="text-xs text-gray-800 whitespace-pre-wrap break-words bg-white border border-gray-200 rounded-md p-3 shadow-inner">
-{JSON.stringify(result, null, 2)}
-      </pre>
-    );
-  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4">
@@ -173,7 +154,7 @@ const OptimizeLogisticsForm = () => {
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Optimization Results</h3>
-        {renderResult()}
+        <AiResponsePanel data={result} emptyText="Submit logistics data to see optimization." />
       </div>
     </div>
   );

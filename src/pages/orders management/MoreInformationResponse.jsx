@@ -56,7 +56,7 @@ const MoreInformationResponse = ({
     }
   }, []);
 
-  const fetchData = async (orderId) => {
+  const fetchData = useCallback(async (orderId) => {
     if (!orderId) return;
     setIsFetching(true);
     try {
@@ -76,14 +76,14 @@ const MoreInformationResponse = ({
     } finally {
       setIsFetching(false);
     }
-  };
+  }, [setResponses, setToast]);
 
   useEffect(() => {
     if (selectedOrderId) {
       fetchAdminNames(selectedOrderId);
       fetchData(selectedOrderId);
     }
-  }, [selectedOrderId]);
+  }, [selectedOrderId, fetchAdminNames, fetchData]);
 
   const handleResponseChange = (orderId) => (e) => {
     setResponseByOrder((prev) => ({

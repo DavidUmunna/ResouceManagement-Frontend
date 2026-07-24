@@ -1,8 +1,12 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { FaCheckCircle } from "react-icons/fa";
 import HeroImage from "../../components/assets/management.jpeg"; // adjust if needed
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <motion.section
       className="w-full bg-gradient-to-br from-gray-50 to-white"
@@ -21,36 +25,51 @@ const Hero = () => {
             transition={{ duration: 0.7, ease: "easeOut" }}
             viewport={{ once: true }}
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
+              Enterprise Resource Management
+            </span>
+
+            <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
               Simplify Your{" "}
               <span className="text-indigo-600">Resource Management</span>
             </h1>
-            
+
             <p className="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              Track Requests, manage approvals, and optimize resources in one powerful platform 
-              designed for modern teams.
+              Track requests, manage approvals, and optimize resources in one secure platform
+              built for modern teams and growing organisations.
             </p>
-            
-            {/*<div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <motion.button
-                className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg 
-                          hover:bg-indigo-700 transition-colors duration-300 
-                          transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                onClick={() => navigate("/companydata")}
+                className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg
+                          hover:bg-indigo-700 transition-colors duration-300
+                          focus:outline-none focus:ring-4 focus:ring-indigo-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Get Started Free
+                Get Started
               </motion.button>
-              
+
               <motion.button
-                className="px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg 
+                onClick={() => navigate("/aboutus")}
+                className="px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg
                           hover:bg-gray-50 transition-colors duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                View Demo
+                Learn More
               </motion.button>
-            </div>*/}
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-sm text-gray-600">
+              {["No credit card required", "Secure & role-based access", "Set up in minutes"].map((item) => (
+                <span key={item} className="inline-flex items-center gap-2">
+                  <FaCheckCircle className="text-indigo-500" />
+                  {item}
+                </span>
+              ))}
+            </div>
           </motion.div>
 
           {/* Right: Image Section */}

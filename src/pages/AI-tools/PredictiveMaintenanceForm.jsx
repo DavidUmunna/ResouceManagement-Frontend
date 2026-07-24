@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { predictMaintenance } from "../../../services/aiService";
+import { predictMaintenance } from "../../services/aiService";
 import { toast } from "react-hot-toast";
+import AiResponsePanel from "./AiResponsePanel";
 
 const PredictiveMaintenanceForm = () => {
   const [formData, setFormData] = useState({
@@ -163,13 +164,7 @@ const PredictiveMaintenanceForm = () => {
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Results</h3>
-        {result ? (
-          <pre className="text-xs text-gray-800 whitespace-pre-wrap break-words bg-white border border-gray-200 rounded-md p-3">
-{JSON.stringify(result, null, 2)}
-          </pre>
-        ) : (
-          <p className="text-sm text-gray-500">Run a prediction to see results here.</p>
-        )}
+        <AiResponsePanel data={result} emptyText="Run a prediction to see results here." />
       </div>
     </div>
   );

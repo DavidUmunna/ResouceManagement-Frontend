@@ -48,7 +48,7 @@ const SubmittedSchedules = ({ refreshKey }) => {
 }, [data?.schedules]);
   const handleDelete=async(scheduleId)=>{
     try{
-      const response=await axios.delete(`${API}/api/scheduling/disbursement-schedules/${scheduleId}`,{withCredentials:true})
+      await axios.delete(`${API}/api/scheduling/disbursement-schedules/${scheduleId}`,{withCredentials:true})
       
       setFilteredSchedules((prevSchedules) =>
       prevSchedules.filter((schedule) => schedule._id !== scheduleId)

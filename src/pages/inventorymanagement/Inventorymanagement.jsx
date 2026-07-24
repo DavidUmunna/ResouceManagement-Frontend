@@ -10,6 +10,41 @@ import Categoryform from './Category_form';
 import CategorySelect from "./Category_select"
 import LoadingModal from "./Loading_modal"
 import { isProd } from '../../components/env';
+import InfoModal from '../../components/InfoModal';
+
+const INVENTORY_INSTRUCTIONS = [
+  {
+    heading: 'Browsing Inventory',
+    items: [
+      'Items are listed in the table filtered to your department. Use the search box to find by name or description.',
+      'Use the category dropdown to show only items in a specific category.',
+      'Click a column header to sort the list by that field.',
+      'Expand a row to see full details including SKU and last-updated timestamp.',
+    ],
+  },
+  {
+    heading: 'Adding Items',
+    items: [
+      'Click "Add New Item", fill in the name, category, and quantity, then click "Save".',
+      'If your category is not listed, use "Add Category" to create one first.',
+    ],
+  },
+  {
+    heading: 'Adjusting Quantities',
+    items: [
+      'Use the + and − buttons on each row to increment or decrement stock.',
+      'Type a quantity directly into the input field and confirm to set an exact amount.',
+      'Every adjustment is logged in the Recent Activity panel on the right.',
+    ],
+  },
+  {
+    heading: 'Deleting Items',
+    items: [
+      'Click the delete (trash) icon on a row to remove that item from inventory.',
+      'Deletions are permanent — confirm carefully before proceeding.',
+    ],
+  },
+];
 const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
  
   const { user } = useUser();
@@ -36,6 +71,7 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
   const [loading, setloading] = useState(true);
   
   const [showForm, setShowForm] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'lastUpdated', direction: 'desc' });
   const [expandedItem, setExpandedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,14 +132,16 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
         setActivities(activitiesRes.data.data || []);
         
       } catch (err) {
-        if (err.response?.status === 401 || err.response?.status === 403) {
+        /*if (err.response?.status === 401 || err.response?.status === 403) {
           setError("Session expired. Please log in again.");
           localStorage.removeItem('sessionId');
           
           window.location.href = '/adminlogin'; 
         } else {
           Sentry.captureException( err);
-        }
+        }*/
+        console.error('Create failed:', err.response?.data || err.message);
+   
       } finally {
         setloading(false);
       }
@@ -336,14 +374,16 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
       setShowForm(false);
       onInventoryChange()
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      /*if (err.response?.status === 401 || err.response?.status === 403) {
         setError("Session expired. Please log in again.");
         localStorage.removeItem('sessionId');
         setAuth(false);
           window.location.href = '/adminlogin'; 
       } else {
         console.error('Create failed:', err.response?.data || err.message);
-      }
+      }*/
+      console.error('Create failed:', err.response?.data || err.message);
+   
     }finally{
       setIsSubmitting(false)
     }
@@ -383,14 +423,31 @@ const InventoryManagement = ({ setAuth , onInventoryChange,  }) => {
         <div className="lg:w-2/3">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Inventory Management</h1>
-              <button 
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">Inventory Management</h1>
+                <button
+                  onClick={() => setShowInfo(true)}
+                  className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-blue-300 text-blue-500 hover:bg-blue-50 hover:border-blue-400 transition flex items-center justify-center text-sm font-bold"
+                  aria-label="How to use this page"
+                >
+                  i
+                </button>
+              </div>
+              <button
                 onClick={() => setShowForm(!showForm)}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 {showForm ? 'Cancel' : 'Add New Item'}
               </button>
             </div>
+
+            {showInfo && (
+              <InfoModal
+                title="How to use Inventory Management"
+                sections={INVENTORY_INSTRUCTIONS}
+                onClose={() => setShowInfo(false)}
+              />
+            )}
 
             {showForm && (
               <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded-lg">

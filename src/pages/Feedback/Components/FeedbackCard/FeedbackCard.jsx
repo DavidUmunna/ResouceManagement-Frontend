@@ -1,9 +1,7 @@
 // frontend/src/components/FeedbackCard/FeedbackCard.jsx
 import React, { useState } from 'react';
 import { FeedbackStatus, STATUS_COLORS, STATUS_LABELS } from '../../constants/Feedback.constants.js';
-import { useUser } from '../../../../components/usercontext';
-export const FeedbackCard = ({ feedback, onStatusUpdate, onDelete }) => {
-  const {user}=useUser();
+export const FeedbackCard = ({ feedback, onStatusUpdate, onDelete, canManage = false }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -76,7 +74,7 @@ export const FeedbackCard = ({ feedback, onStatusUpdate, onDelete }) => {
           <p className="text-gray-600 leading-relaxed">{feedback.description}</p>
         </div>
         
-        {isExpanded && onStatusUpdate && user.role==="lobal_admin" && (
+        {isExpanded && onStatusUpdate && canManage && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Update Status

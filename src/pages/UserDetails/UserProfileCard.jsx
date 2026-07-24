@@ -2,14 +2,32 @@ import React from 'react';
 
 import { EnterpriseCard } from './EnterpriseCard';
 import { colorPalette, typography} from './enterpriseUI.constants';
-import { FiMail, FiCalendar } from 'react-icons/fi';
-import { FaSitemap,FaUser } from 'react-icons/fa';
+import { FiMail, FiCalendar, FiBriefcase } from 'react-icons/fi';
+import { FaSitemap } from 'react-icons/fa';
 import { formatDate, getInitials } from './userDetails.utils';
 import userImg from "../../components/assets/user.png"
+
+const STATUS_STYLES = {
+  'Available': { dot: 'bg-green-500',  pill: 'bg-green-50 text-green-700'  },
+  'Busy':      { dot: 'bg-yellow-500', pill: 'bg-yellow-50 text-yellow-700' },
+  'On Leave':  { dot: 'bg-red-400',    pill: 'bg-red-50 text-red-700'       },
+  'Remote':    { dot: 'bg-blue-500',   pill: 'bg-blue-50 text-blue-700'     },
+};
+
+const WorkStatusBadge = ({ status }) => {
+  const styles = STATUS_STYLES[status] || { dot: 'bg-gray-400', pill: 'bg-gray-100 text-gray-600' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium ${styles.pill}`}>
+      <span className={`w-2 h-2 rounded-full ${styles.dot}`} />
+      {status}
+    </span>
+  );
+};
+
 const ProfileBadge = ({ role }) => (
   <span className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium ${
-    role === 'Admin' 
-      ? 'bg-purple-100 text-purple-800' 
+    role === 'Admin'
+      ? 'bg-purple-100 text-purple-800'
       : 'bg-blue-100 text-blue-800'
   }`}>
     {role}
@@ -72,11 +90,14 @@ export const UserProfileCard = ({ user }) => (
             <span className="text-gray-700 text-lg">{user.Department}</span>
           </div>
         )}
-
-        {user?.Availability &&(
+      
+        {user?.WorkStatus && (
           <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-            <FaUser className="text-gray-500 text-xl flex-shrink-0" />
-            <span className="text-gray-700 text-lg">{user.Department}</span>
+            <FiBriefcase className="text-gray-500 text-xl flex-shrink-0" />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Work Status</span>
+              <WorkStatusBadge status={user.WorkStatus} />
+            </div>
           </div>
         )}
         

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useUser } from '../../components/usercontext';
 import * as Sentry from "@sentry/react"
@@ -6,7 +6,6 @@ import { AnimatePresence } from 'framer-motion';
 import { isProd } from '../../components/env';
 import { toast } from 'react-toastify';
 import PaginationControls from '../../components/Paginationcontrols';
-import ReviewVerification from '../../components/ReviewVerification';
 const UnresolvedOrdersList = () => {
   const [formdata,setformdata]=useState({
     date:'yesterday'
@@ -23,7 +22,7 @@ const UnresolvedOrdersList = () => {
     });
     const [isLoading, setIsLoading]=useState(false)
 
-  const getOrders=async(page=Data.pagination.page,limit=Data.pagination.limit)=>{
+  const getOrders = useCallback(async (page=Data.pagination.page,limit=Data.pagination.limit)=>{
     try{
       setIsLoading(true)
       const userId=user.userId
@@ -54,7 +53,7 @@ const UnresolvedOrdersList = () => {
     }finally{
       setIsLoading(false)
     }
-  }
+  }, [Data.pagination.limit, Data.pagination.page, formdata.date, user.userId])
 
   const ApproveOrders=async(data,orderId)=>{
     try{
@@ -83,7 +82,7 @@ const UnresolvedOrdersList = () => {
   }
   useEffect(()=>{
     getOrders()
-  },[formdata.date])
+  },[formdata.date, getOrders])
   
   
   

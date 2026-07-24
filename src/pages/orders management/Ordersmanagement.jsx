@@ -10,6 +10,7 @@ import axios from 'axios';
 import PaginationControls from "../../components/Paginationcontrols";
 import { fetch_RBAC_ordermanagement } from '../../services/rbac_service';
 import { isProd } from "../../components/env";
+import { subscribeToForegroundMessages } from '../../firebaseConfig';
 
 const OrdersDashboard = ({setAuth}) => {
   const {user}=useUser()
@@ -17,6 +18,7 @@ const OrdersDashboard = ({setAuth}) => {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [notificationToast, setNotificationToast] = useState(null);
   //const [filteredorders,setfilteredorders]=useState([])
 
   const [Data, setData] = useState({
@@ -181,6 +183,36 @@ const OrdersDashboard = ({setAuth}) => {
     init();
   }, [user,setAuth]);
 
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const unsubscribe = subscribeToForegroundMessages((payload) => {
+      if (payload?.data?.type === "new_request") {
+        setNotificationToast({
+          title: payload?.notification?.title || "New request submitted",
+          body: payload?.notification?.body || "A new request has been created."
+        });
+        RefreshRequest();
+      }
+    });
+
+    return unsubscribe;
+  }, [Data.pagination?.page, Data.pagination?.limit]);
+
+  useEffect(() => {
+    if (!notificationToast) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setNotificationToast(null);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [notificationToast]);
+
   //const paginated_orders=orders.slice(startIndex,endIndex)
   //const totalPages = Math.ceil(orders.length / itemsperpage);
   const handleOrderSelect = (orderId) => {
@@ -231,6 +263,13 @@ const shouldShowRightColumn =
   (Duplicates || UnresolvedOrdersList);
 
 return (
+  <>
+  {notificationToast && (
+    <div className="fixed top-20 right-4 z-50 max-w-sm rounded-lg border border-blue-200 bg-white px-4 py-3 shadow-lg">
+      <p className="text-sm font-semibold text-blue-900">{notificationToast.title}</p>
+      <p className="mt-1 text-sm text-gray-700">{notificationToast.body}</p>
+    </div>
+  )}
   <div
     className={`flex flex-col lg:flex-row gap-6 p-4 mt-10 h-[calc(100vh-5rem)] mb-9 ${
       !shouldShowRightColumn ? 'justify-center' : ''
@@ -279,6 +318,7 @@ return (
       </div>
     )}
   </div>
+  </>
 );
 
 

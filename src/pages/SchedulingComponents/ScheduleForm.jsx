@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'react-toastify';
 import PaymentDetailsTable from './PaymentDetailsTable';
@@ -19,7 +19,7 @@ export const ScheduleForm = ({ initialData, onSubmit, isSubmitting }) => {
 
   const [PaymentItem,setPaymentItem]=useState([])
   
-  const fetchData=async()=>{
+  const fetchData = useCallback(async () => {
     try{
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
       const response=await axios.get(`${API_URL}/paymentdetails/${initialData._id}`,{withCredentials:true})
@@ -34,11 +34,11 @@ export const ScheduleForm = ({ initialData, onSubmit, isSubmitting }) => {
       error.response? toast.error(error.response.data.message):
       toast.error("there was an error while fetching data")
     }
-  }
+  }, [initialData._id])
 
   useEffect(()=>{
      fetchData()
-  },[])
+  },[fetchData])
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);

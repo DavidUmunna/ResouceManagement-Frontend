@@ -6,7 +6,11 @@ import {
   updateOrderStatus,
   deleteOrder,
   downloadFile,
-  
+  escalateOrder,
+  deescalateOrder,
+  recordPayment,
+  downloadReceipt,
+
 } from "../../services/OrderService";
 import SignatureModal from "../../components/SignatureModal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,8 +30,23 @@ import ReviewVerification from "../../components/ReviewVerification";
 import { toast } from "react-toastify";
 import { isProd } from "../../components/env";
 import EditOrderModal from "./EditOrderModal";
-import { DeleteConfirmationModal,DeleteButton } from "../../components/DeleteConfirmationModal";
+import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
+import { PAYMENT_ROLES, PAYMENT_DEPTS } from "../../constants/roles";
 
+// Relative time, e.g. "just now", "3 hours ago", "2 days ago"
+const timeAgo = (dateStr) => {
+  if (!dateStr) return "";
+  const then = new Date(dateStr);
+  if (isNaN(then.getTime())) return "";
+  const seconds = Math.floor((Date.now() - then.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
 
 const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error, setError ,RefreshRequest,accRoles, EditingRoles,DeletionRoles}) => {
   const { keyword, status, dateRange, orderedby } = useSelector(
@@ -57,6 +76,9 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const [EditingModalId,setEditingModalId]=useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [loadingDownload, setLoadingDownload]=useState({selectedOrderId:'',status:false})
+  const [payModalOrder, setPayModalOrder] = useState(null);
+  const [payForm, setPayForm] = useState({ reference: '', channel: 'bank_transfer', paidAt: '', amount: '' });
+  const [payLoading, setPayLoading] = useState(false);
   const getOverallStatus = (approvals, Department,role) => {
     if (!approvals || approvals.length === 0) return "Pending";
     if (approvals.some(a => a.status === "Rejected")) return "Rejected";
@@ -398,6 +420,64 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     setDeleteModalOpen(true);
   }
 
+  const handleEscalate = async (e, order) => {
+    e.stopPropagation();
+    try {
+      await escalateOrder(order._id);
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, escalated: true } : o));
+      toast.success('Order escalated — approvers have been notified');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to escalate order');
+    }
+  };
+
+  const handleDeescalate = async (e, order) => {
+    e.stopPropagation();
+    try {
+      await deescalateOrder(order._id);
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, escalated: false } : o));
+      toast.success('Escalation removed');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to remove escalation');
+    }
+  };
+
+  const openPayModal = (e, order) => {
+    e.stopPropagation();
+    const total = (order.products || []).reduce((s, p) => s + (p.price || 0) * (p.quantity || 1), 0);
+    setPayForm({
+      reference: '',
+      channel: 'bank_transfer',
+      paidAt: new Date().toISOString().slice(0, 10),
+      amount: total,
+    });
+    setPayModalOrder(order);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!payForm.reference.trim()) {
+      toast.error('Payment reference is required');
+      return;
+    }
+    setPayLoading(true);
+    try {
+      const result = await recordPayment(payModalOrder._id, payForm);
+      toast.success('Payment recorded successfully');
+      setOrders(prev =>
+        prev.map(o =>
+          o._id === payModalOrder._id
+            ? { ...o, payment: { ...o.payment, ...result.payment } }
+            : o
+        )
+      );
+      setPayModalOrder(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to record payment');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -646,15 +726,29 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
           </span>
         )}
       </div>
+      {order.payment?.status === 'paid' && (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-gray-600">Payment Receipt:</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); downloadReceipt(order._id, order.orderNumber); }}
+            className="flex items-center gap-1.5 text-green-600 hover:text-green-800 text-sm"
+            title="Download payment receipt"
+          >
+            <FaMoneyBillWave className="w-3.5 h-3.5" />
+            {order.payment.reference} — Download Receipt
+          </button>
+        </div>
+      )}
+
        {order.remarks && (
         <div>
           <p className="font-medium text-gray-600">Remarks:</p>
           <p className="text-gray-600">{order.remarks}</p>
         </div>
       )}
-      <div className="flex  justify-between">
+      <div className="flex  justify-between flex-wrap gap-2">
 
-        {(accRoles?.includes(user.Department))&&(<button 
+        {(accRoles?.includes(user.Department))&&(<button
           onClick={() => {
             setSelectedRequest(prev => prev === order ? null : order)
             setIsExportOpen(true)
@@ -777,13 +871,21 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     >
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 flex-wrap">
                             <h3 className="text-lg font-semibold text-gray-800 ">
                               {(order.Title || "Untitled Order").length > 40
                                ? (order.Title || "Untitled Order").slice(0, 40) + "..."
                                : order.Title || "Untitled Order"}
                             </h3>
                             {getStatusBadge(order)}
+                            {order.escalated && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Escalated
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-gray-500 mt-1">
                             #{order.orderNumber} • {order.orderedBy}
@@ -791,10 +893,76 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center text-sm text-gray-500">
-                            {new Date(order.createdAt).toLocaleDateString()}
+                          <div className="text-sm text-gray-500 text-right">
+                            <div>{new Date(order.createdAt).toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-400">{timeAgo(order.createdAt)}</div>
                           </div>
-      
+
+                          {(() => {
+                            const meId    = String(user?.userId || user?._id || user?.id || '');
+                            const staffId = order.staff?._id ? String(order.staff._id) : String(order.staff ?? '');
+                            const emailMatch = !!(user?.email && order.staff?.email && order.staff.email.toLowerCase() === user.email.toLowerCase());
+                            const idMatch    = !!(meId && staffId && meId === staffId);
+                            const isOwner    = emailMatch || idMatch;
+                            const computedStatus      = getOverallStatus(order.Approvals, order.staff?.Department, order.staff?.role);
+                            const isPending           = computedStatus === 'Pending';
+                            const isPartiallyApproved = computedStatus === 'Partially Approved';
+
+                            const svgIcon = (
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            );
+
+                            return (
+                              <>
+                                {/* Escalate: only owner, only while active */}
+                                {(isPending || isPartiallyApproved) && isOwner && !order.escalated && (
+                                  <button
+                                    onClick={(e) => handleEscalate(e, order)}
+                                    title="Escalate this order"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors bg-yellow-500 text-white hover:bg-yellow-600"
+                                  >
+                                    {svgIcon}
+                                    Escalate
+                                  </button>
+                                )}
+                                {/* De-escalate: owner or any approver */}
+                                {order.escalated && (isOwner || user.canApprove) && (
+                                  <button
+                                    onClick={(e) => handleDeescalate(e, order)}
+                                    title="Remove escalation"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors bg-yellow-100 text-yellow-700 border border-yellow-300 hover:bg-yellow-200"
+                                  >
+                                    {svgIcon}
+                                    De-escalate
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
+                          
+
+                          {/* Payment badge / record button */}
+                          {order.payment?.status === 'paid' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                              <FaMoneyBillWave className="w-3 h-3" />
+                              Paid
+                            </span>
+                          ) : (
+                            (PAYMENT_ROLES.includes(user.role) || PAYMENT_DEPTS.includes(user.Department)) &&
+                            order.status === 'Approved' && (
+                              <button
+                                onClick={(e) => openPayModal(e, order)}
+                                title="Record payment receipt"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
+                              >
+                                <FaMoneyBillWave className="w-3 h-3" />
+                                Record Payment
+                              </button>
+                            )
+                          )}
+
                           {order.filenames?.length > 0 && (
                             <div className="flex justify-between">
 
@@ -834,14 +1002,14 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                         .filter(
                                           (statusOption) =>
 
-                                            statusOption !== "Completed" || user?.Department === "accounts_dep" 
-                                            
-                                          
+                                            statusOption !== "Completed" || accRoles?.includes(user?.Department)
+
+
                                         ).filter(
                                             (statusOption) =>
 
 
-                                            statusOption !== "Awaiting Funding" || user?.Department==="accounts_dep"
+                                            statusOption !== "Awaiting Funding" || accRoles?.includes(user?.Department)
                                         )
                                         .map((statusOption) => (
                                           <div
@@ -871,10 +1039,10 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                               {statusOption === "More Information" && (
                                                 <FaInfoCircle className="text-black" />
                                               )}
-                                              {statusOption === "Completed" && user?.Department === "accounts_dep" && (
+                                              {statusOption === "Completed" && accRoles?.includes(user?.Department) && (
                                                 <FaCheck className="text-blue-500" />
                                               )}
-                                              {(statusOption === "Awaiting Funding" && user?.Department==="accounts_dep") && (
+                                              {(statusOption === "Awaiting Funding" && accRoles?.includes(user?.Department)) && (
                                                 <FaMoneyBillWave className="text-amber-600" />
                                               )}
 
@@ -1046,6 +1214,82 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
         onConfirm={handleDelete}
         orderId={selectedOrderId}
         />
+
+        {/* Payment receipt recording modal */}
+        {payModalOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-800">Record Payment</h2>
+              <p className="text-sm text-gray-500">
+                {payModalOrder.Title} &mdash; {payModalOrder.orderNumber}
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Reference *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TRF/2025/001234"
+                    value={payForm.reference}
+                    onChange={e => setPayForm(f => ({ ...f, reference: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Channel</label>
+                  <select
+                    value={payForm.channel}
+                    onChange={e => setPayForm(f => ({ ...f, channel: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="card">Card</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Amount Paid (₦)</label>
+                  <input
+                    type="number"
+                    value={payForm.amount}
+                    onChange={e => setPayForm(f => ({ ...f, amount: Number(e.target.value) }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Payment Date</label>
+                  <input
+                    type="date"
+                    value={payForm.paidAt}
+                    onChange={e => setPayForm(f => ({ ...f, paidAt: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setPayModalOrder(null)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRecordPayment}
+                  disabled={payLoading}
+                  className="flex-1 px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 disabled:opacity-60"
+                >
+                  {payLoading ? 'Saving…' : 'Confirm Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
           {isLoading && total > 0 && (
             <DownloadStatus
               downloadedBytes={downloaded}

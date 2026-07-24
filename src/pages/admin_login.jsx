@@ -5,6 +5,7 @@ import { useUser } from "../components/usercontext";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {Link} from "react-router-dom"
+import { FiEye, FiEyeOff } from "react-icons/fi";
 //import { getCookie } from "../components/Helpers";
 import * as Sentry from "@sentry/react"
 import { isProd } from "../components/env";
@@ -13,6 +14,7 @@ export default function Sign_in({ setAuth }) {
   const { setUser } = useUser();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const [isVisible, setIsVisible] = useState(false);
@@ -86,7 +88,7 @@ export default function Sign_in({ setAuth }) {
             className="mx-auto h-14 w-14 "
           />
           <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-              Sign in to Your Account
+              Halden Nigeria Limited
           </h2>
         </div>
 
@@ -136,15 +138,25 @@ export default function Sign_in({ setAuth }) {
                 </div>
               </div>
               <div className="mt-2">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full rounded-md bg-white px-3 py-2 pr-10 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
 

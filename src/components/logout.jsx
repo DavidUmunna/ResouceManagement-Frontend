@@ -1,4 +1,3 @@
-/*disable eslint react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useUser } from "./usercontext";
 import { motion } from "framer-motion";
@@ -10,8 +9,20 @@ export default function SignOut({ setAuth }) {
     const { user,setUser } = useUser();
     const [error,setError]=useState(null)
     //const [IsLoading, setIsLoading]=useState(false)
+
     useEffect(() => {
+        const clearClientSession = () => {
+          localStorage.removeItem("sessionId");
+          localStorage.removeItem("user");
+          localStorage.removeItem("auth");
+          sessionStorage.removeItem("user");
+          sessionStorage.removeItem("sessionId");
+          delete axios.defaults.headers.common.Authorization;
+          delete axios.defaults.headers.common["x-session-id"];
+        };
+
         setAuth(false);
+    clearClientSession();
         const logout_backend=async()=>{
             try{
                
@@ -19,21 +30,22 @@ export default function SignOut({ setAuth }) {
             
                 const API = `${process.env.REACT_APP_API_URL}/api`
                 const response=await axios.post(`${API}/admin-user/logout`,{userId:user?.userId},{withCredentials:true})
-                if (response.success===true){
+                if (response.data?.success===true){
 
 
                     setUser(null);
-                    localStorage.removeItem("user");
+                  clearClientSession();
                      
-                }else if(error.response){
+                } else {
                     setError("An Error Occurred")
                 }
             }catch(error){
+                clearClientSession();
                 if (error.message === "Network Error" || error.code === "ERR_NETWORK"){
                         window.location.href = '/adminlogin';
                       }else if (error.response?.status===401|| error.response?.status===403){
                                              
-                        //localStorage.removeItem('sessionId');
+                    localStorage.removeItem('sessionId');
                         
                         window.location.href = '/adminlogin'; 
                       }else{
@@ -53,7 +65,7 @@ export default function SignOut({ setAuth }) {
 
         
          // Delay for smoother transition
-    }, []);
+    }, [setAuth, setUser, user?.userId]);
     if (error){
         return <div className="p-4 flex  justify-center items-end min-h-screen text-red-600 border-l-4 border-red-500 bg-red-200">
               {error}

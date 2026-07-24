@@ -69,20 +69,25 @@ const DepartmentManagement = ({ setAuth }) => {
         ]);
        
        
+        const allResults = [deptRes, usersRes, tasksRes, statsRes];
+        const unauthorized = allResults.find(r =>
+          r.status === 'rejected' &&
+          (r.reason?.response?.status === 401 || r.reason?.response?.status === 403)
+        );
+        if (unauthorized) {
+          setError("Session expired. Please log in again.");
+          localStorage.removeItem('sessionId');
+          setAuth(false);
+          window.location.href = '/adminlogin';
+          return;
+        }
+
         setDepartments(deptRes.status === 'fulfilled' ? deptRes.value.data.data : []);
         setUsers(usersRes.status === 'fulfilled' ? usersRes.value.data.data : []);
         setTasks(tasksRes.status === 'fulfilled' ? tasksRes.value.data.data : []);
         setStats(statsRes.status === 'fulfilled' ? (statsRes.value.data.data || []) : []);
       } catch (err) {
-        if (err.response?.status===401|| err.response?.status===403){
-        setError("Session expired. Please log in again.");
-        localStorage.removeItem('sessionId');
-        setAuth(false)
-        window.location.href = '/adminlogin'; 
-      }else{
-
         console.error("Fetch error:", err);
-      }
       } finally {
         setLoading(false);
       }
@@ -117,21 +122,15 @@ const refreshDepartments = () => {
   );
 
   const deleteTask=async(taskId)=>{
+    const taskToRestore = tasks.find(t => t._id === taskId);
     try{
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
       setTasks(prevTasks => prevTasks.filter(t => t._id !== taskId));
-      const response=await axios.delete(
-        `${API_URL}/tasks/${taskId}`
-      );
-      setTasks(prev=>prev.map(t=>
-        t._id===taskId?response.data.data:t
-      ))
+      await axios.delete(`${API_URL}/tasks/${taskId}`);
     }catch(error){
-      setTasks(prevTasks => [...prevTasks, tasks.find(t => t._id === taskId)]);
+      if (taskToRestore) setTasks(prevTasks => [...prevTasks, taskToRestore]);
       console.error(error.response?.data||error.message)
     }
-
-
   }
   
   // Modal handling
@@ -367,38 +366,43 @@ const refreshDepartments = () => {
 
   // Components
 
-  const StatsPanel = ({ department }) => (
-    <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-      <h3 className="font-bold text-lg mb-3 flex items-center">
-        <FiBarChart2 className="mr-2" /> Department Statistics
-      </h3>
-      {Array.isArray(stats) &&
-        stats.map((stat)=>(
-          
-          <div className="grid grid-cols-2 gap-4" key={stat._id}>
-        <StatCard 
-          title="Total Members" 
-          value={stat?.memberCount} 
-          trend="↗︎ 2 this month" 
-          />
-        <StatCard 
-          title="Active Tasks" 
-          value={stat?.activeTasks || 0} 
-          trend={`${stat?.taskCompletion || 0}% completed`} 
-        />
-        <StatCard 
-          title="Avg. Task Time" 
-          value={Math.ceil(stat?.avgTaskTimeHours) || 'N/A'} 
-          trend="Last month: 3.2 days" 
-          />
-        <StatCard 
-          title="Head Since" 
-          value={new Date(department.createdAt.split("T")[0]).toLocaleDateString() || 'N/A'} 
-          />
+  const StatsPanel = ({ department }) => {
+    const stat = Array.isArray(stats)
+      ? stats.find(s => String(s._id) === String(department._id))
+      : null;
+    return (
+      <div className="mt-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+        <h3 className="font-bold text-lg mb-3 flex items-center">
+          <FiBarChart2 className="mr-2" /> Department Statistics
+        </h3>
+        {stat ? (
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              title="Total Members"
+              value={stat?.memberCount}
+              trend="↗︎ 2 this month"
+            />
+            <StatCard
+              title="Active Tasks"
+              value={stat?.activeTasks || 0}
+              trend={`${stat?.taskCompletion || 0}% completed`}
+            />
+            <StatCard
+              title="Avg. Task Time"
+              value={Math.ceil(stat?.avgTaskTimeHours) || 'N/A'}
+              trend="Last month: 3.2 days"
+            />
+            <StatCard
+              title="Head Since"
+              value={new Date(department.createdAt.split("T")[0]).toLocaleDateString() || 'N/A'}
+            />
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 italic">No statistics available for this department.</p>
+        )}
       </div>
-        ))}
-    </div>
-  );
+    );
+  };
 
   const TaskList = ({ department }) => (
     <div className="mt-4">
@@ -470,14 +474,14 @@ const refreshDepartments = () => {
             <div className="flex items-center">
               <FiUsers className="mr-2 text-gray-400" />
               <span>{user.name}</span>
-              {department.headOfDepartment?.user._id === user._id && (
+              {department.headOfDepartment?.user?._id === user._id && (
                 <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
                   Head
                 </span>
               )}
             </div>
             
-            {(department.headOfDepartment?.user._id === currentuser.userId || ADMIN_ROLES.includes(currentuser.role) )&& (
+            {(department.headOfDepartment?.user?._id === currentuser.userId || ADMIN_ROLES.includes(currentuser.role) )&& (
               <button
                 onClick={() =>removeUserFromDepartment(department._id,user._id)}
                 className="text-red-500 hover:text-red-700"
@@ -490,8 +494,6 @@ const refreshDepartments = () => {
       </div>
     </div>
   );
-
-  if (loading) return <div className="text-center py-8">Loading departments...</div>;
 
   return (
     <div className="max-w-full sm:max-w-md md:max-w-full lg:max-w-4xl xl:max-w-6xl mx-auto p-6 mt-10 mb-15"

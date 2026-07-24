@@ -153,8 +153,75 @@ export const deleteOrder = async (orderId) => {
       Sentry.captureMessage("Error deleting  orders")
       Sentry.captureException(error)
     }
-    
+
   }
+};
+
+export const escalateOrder = async (orderId) => {
+  const response = await axios.put(
+    `${API_URL}/${orders}/${orderId}/escalate`,
+    {},
+    { withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  return response.data;
+};
+
+export const deescalateOrder = async (orderId) => {
+  const response = await axios.put(
+    `${API_URL}/${orders}/${orderId}/deescalate`,
+    {},
+    { withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  return response.data;
+};
+
+export const recordPayment = async (orderId, { reference, channel, paidAt, amount }) => {
+  const response = await axios.post(
+    `${API_URL}/${orders}/${orderId}/pay/record`,
+    { reference, channel, paidAt, amount },
+    { withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  return response.data; // { success, payment }
+};
+
+export const downloadReceipt = async (orderId, orderNumber) => {
+  const response = await axios.get(
+    `${API_URL}/${orders}/${orderId}/pay/receipt`,
+    { responseType: 'blob', withCredentials: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
+  );
+  const url = URL.createObjectURL(response.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `receipt-${orderNumber}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+export const getSpendByDepartment = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/by-department`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
+};
+
+export const getSpendByStatus = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/by-status`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
+};
+
+export const getSpendSummary = async (params = {}) => {
+  const response = await axios.get(`${API_URL}/${orders}/analytics/purchase-orders/spend-summary`, {
+    params,
+    withCredentials: true,
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  });
+  return response.data;
 };
 
 

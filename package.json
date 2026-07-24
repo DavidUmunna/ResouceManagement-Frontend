@@ -59,7 +59,7 @@
   },
   "scripts": {
     "start": "react-scripts --openssl-legacy-provider start",
-    "build": "react-scripts --openssl-legacy-provider build",
+    "build": "REACT_APP_VERSION=$(git rev-parse --short HEAD) react-scripts --openssl-legacy-provider build && node -e \"const {execSync}=require('child_process');const v=execSync('git rev-parse --short HEAD').toString().trim();require('fs').writeFileSync('build/version.json',JSON.stringify({version:v}))\"",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
@@ -126,6 +126,7 @@
     },
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "\\.(png|jpg|jpeg|gif|svg|webp|ico)$": "<rootDir>/__mocks__/fileMock.js",
       "^axios$": "<rootDir>/__mocks__/axios.js",
       "^react-router-dom$": "<rootDir>/__mocks__/react-router-dom.js"
     },

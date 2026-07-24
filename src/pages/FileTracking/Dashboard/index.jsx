@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiActivity, FiAlertTriangle, FiClock, FiFileText } from "react-icons/fi";
 import { fileTrackDashboardService } from "./services";
 
@@ -16,11 +16,7 @@ const FileTrackingDashboard = ({ serviceInstance }) => {
   const [recentTracks, setRecentTracks] = useState([]);
   const [summary, setSummary] = useState(DEFAULT_SUMMARY);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -35,7 +31,11 @@ const FileTrackingDashboard = ({ serviceInstance }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [service]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const buildSummary = (tracks = []) => {
     const now = new Date();

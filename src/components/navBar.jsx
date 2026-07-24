@@ -1,17 +1,14 @@
 import { Disclosure, Menu, Transition } from '@headlessui/react';
-import { Bars3Icon, BellIcon, XMarkIcon,ClipboardDocumentListIcon, PlusCircleIcon,UserIcon,UsersIcon,ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, BellIcon, XMarkIcon,ClipboardDocumentListIcon, PlusCircleIcon,UsersIcon,ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import React, { useState,useRef,useEffect } from 'react';
 import { useUser } from "./usercontext";
 import user_img from "./assets/user.png";
 import { motion } from 'framer-motion';
-import { isProd } from './env';
 import { PanelLeft,CalendarClock } from 'lucide-react';
 import Sidebar from './Sidebar';
-import {fetch_RBAC} from "../services/rbac_service"
-import * as Sentry from "@sentry/react"
 import {FiFileText} from "react-icons/fi"
-import { EnableNotifications } from '../firebaseConfig';
+import { EnableNotifications, subscribeToForegroundMessages } from '../firebaseConfig';
 const navigation = [
   { name: 'Requests', to: '/admin/requestlist', icon: ClipboardDocumentListIcon , hiddenFor:['Visitor']},
   { name: 'Create Request', to: '/admin/createorder', icon: PlusCircleIcon, hiddenFor:['Visitor'] },
@@ -37,7 +34,21 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const sidebarRef=useRef(null);
-  const [ADMIN_ROLES_GENERAL,set_ADMIN_ROLES_GENERAL]=useState([])
+  const [notificationToast, setNotificationToast] = useState(null);
+
+  const handleEnableNotifications = async () => {
+    try {
+      const token = await EnableNotifications();
+      if (token) {
+        alert("Notifications activated");
+      } else {
+        alert("Notifications were not enabled. Please allow browser permission and try again.");
+      }
+    } catch (error) {
+      console.error("Failed to enable notifications", error);
+      alert("Failed to enable notifications. Please check your connection and try again.");
+    }
+  };
   
 
 
@@ -52,46 +63,59 @@ export default function Navbar() {
 
   });
   
-    useEffect(()=>{
-        const rbac_=async()=>{
-          try{
 
-            const response=await fetch_RBAC()
-           
-             if (Array.isArray(response.data.data.ADMIN_ROLES_GENERAL)) {
-          set_ADMIN_ROLES_GENERAL(response.data.data.ADMIN_ROLES_GENERAL);
-          } else {
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
 
-          set_ADMIN_ROLES_GENERAL([]);
-        }
-          }catch(error){
+    const unsubscribe = subscribeToForegroundMessages((payload) => {
+      const title = payload?.notification?.title || payload?.data?.title || "New notification";
+      const body = payload?.notification?.body || payload?.data?.body || "You have a new update.";
 
-            if (isProd) Sentry.captureException(error)
-          }
-        }
-        rbac_()
+      if (location.pathname !== '/admin/requestlist') {
+        setNotificationToast({ title, body });
+      }
+    });
 
-    },[user])
+    return unsubscribe;
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (!notificationToast) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      setNotificationToast(null);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [notificationToast]);
     
 
   return (
     <>
+      {notificationToast && (
+        <div className="fixed top-20 right-4 z-[60] max-w-sm rounded-lg border border-blue-200 bg-white px-4 py-3 shadow-lg">
+          <p className="text-sm font-semibold text-blue-900">{notificationToast.title}</p>
+          <p className="mt-1 text-sm text-gray-700">{notificationToast.body}</p>
+        </div>
+      )}
       <Disclosure as="nav" className="bg-gray-800 fixed top-0 left-0 w-full z-20">
         {({ open }) => (
           <>
             <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center">
-                  {/* Sidebar toggle (only for admin) */}
-                  {ADMIN_ROLES_GENERAL.includes(user?.role) && (
-                    <button
-                      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                      className="p-2 text-gray-400 hover:text-white mr-2"
-                      aria-label="Toggle sidebar"
-                    >
-                      <PanelLeft className="h-6 w-6" />
-                    </button>
-                  )}
+                  {/* Sidebar toggle */}
+                  <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-2 text-gray-400 hover:text-white mr-2"
+                    aria-label="Toggle sidebar"
+                  >
+                    <PanelLeft className="h-6 w-6" />
+                  </button>
 
                   <div className="flex-shrink-0">
                     <img
@@ -130,9 +154,7 @@ export default function Navbar() {
                       type="button"
                       className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none"
                       aria-label="Notifications"
-                      onClick={()=>{
-                        alert("Notifications Activated")
-                        EnableNotifications()}}
+                      onClick={handleEnableNotifications}
                     >
                       <BellIcon className="h-6 w-6" aria-hidden="true" />
                     </button>
