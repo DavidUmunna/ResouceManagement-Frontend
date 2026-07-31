@@ -10,13 +10,14 @@ import {
   deescalateOrder,
   recordPayment,
   downloadReceipt,
+  getShareLink,
 
 } from "../../services/OrderService";
 import SignatureModal from "../../components/SignatureModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText } from "lucide-react";
 import { FaFilePdf,FaInfoCircle, FaFile, FaTrash, 
-  FaEllipsisV, FaCheck, FaTimes, FaClock, FaComment,FaTimesCircle, FaMoneyBillWave, FaSignature } from "react-icons/fa";
+  FaEllipsisV, FaCheck, FaTimes, FaClock, FaComment,FaTimesCircle, FaMoneyBillWave, FaSignature, FaShareAlt } from "react-icons/fa";
 import { FiDownload,FiEdit2  } from "react-icons/fi";
 import { useUser } from "../../components/usercontext";
 import Searchbar from "./searchbar";
@@ -79,6 +80,8 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
   const [payModalOrder, setPayModalOrder] = useState(null);
   const [payForm, setPayForm] = useState({ reference: '', channel: 'bank_transfer', paidAt: '', amount: '' });
   const [payLoading, setPayLoading] = useState(false);
+  const [shareData, setShareData] = useState(null); // { orderId, url }
+  const [sharingId, setSharingId] = useState(null);
   const getOverallStatus = (approvals, Department,role) => {
     if (!approvals || approvals.length === 0) return "Pending";
     if (approvals.some(a => a.status === "Rejected")) return "Rejected";
@@ -419,6 +422,27 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     setSelectedOrderId(orderId);
     setDeleteModalOpen(true);
   }
+
+  const handleShare = async (e, order) => {
+    e.stopPropagation();
+    try {
+      setSharingId(order._id);
+      const url = await getShareLink(order._id);
+      if (!url) throw new Error('no url');
+      // Prefer the native share sheet (mobile → WhatsApp, etc.); fall back to a menu
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: `Purchase Order #${order.orderNumber}`, text: order.Title || 'Purchase Order', url });
+          return;
+        } catch { /* user cancelled or unsupported — fall through to menu */ }
+      }
+      setShareData({ orderId: order._id, url });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to create share link');
+    } finally {
+      setSharingId(null);
+    }
+  };
 
   const handleEscalate = async (e, order) => {
     e.stopPropagation();
@@ -941,7 +965,6 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                               </>
                             );
                           })()}
-                          
 
                           {/* Payment badge / record button */}
                           {order.payment?.status === 'paid' ? (
@@ -979,8 +1002,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                             </div>
                           )}
 
-                          {user.canApprove && (
-                            <div className="relative ">
+                          <div className="relative ">
                               <button
                                 onClick={(e) => toggleDropdown(order._id, e)}
                                 className="p-2 text-gray-500 hover:text-gray-700 transition-colors inset-0"
@@ -998,6 +1020,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                     className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200"
                                   >
                                     <div className="py-1">
+                                      {user.canApprove && (<>
                                       {["Pending", "Approved", "Rejected", "Completed","More Information", "Awaiting Funding"]
                                         .filter(
                                           (statusOption) =>
@@ -1086,12 +1109,21 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                         <FaComment className="mr-2" />
                                         <span>{openCommentOrderId === order._id ? 'Hide' : 'Add'} Comment</span>
                                       </button>
+                                      </>)}
+                                      {/* Share — available to everyone */}
+                                      <button
+                                        onClick={(e) => { handleShare(e, order); setDropdownOpen(null); }}
+                                        disabled={sharingId === order._id}
+                                        className="flex items-center w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                                      >
+                                        <FaShareAlt className="mr-2" />
+                                        <span>{sharingId === order._id ? 'Sharing…' : 'Share'}</span>
+                                      </button>
                                     </div>
                                   </motion.div>
                                 )}
                               </AnimatePresence>
                             </div>
-                          )}
                            
 
                           {openCommentOrderId===order._id && (
@@ -1290,6 +1322,51 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
             </div>
           </div>
         )}
+
+        {/* Share PO link */}
+        {shareData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShareData(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800">Share Purchase Order</h2>
+                <button onClick={() => setShareData(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none" aria-label="Close">×</button>
+              </div>
+              <p className="text-xs text-gray-500 break-all bg-gray-50 border border-gray-200 rounded-lg p-2">{shareData.url}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(shareData.url)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition"
+                >
+                  WhatsApp
+                </a>
+                <a
+                  href={`https://outlook.office.com/mail/deeplink/compose?subject=${encodeURIComponent('Purchase Order')}&body=${encodeURIComponent(`View the purchase order:\n${shareData.url}`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition"
+                >
+                  Outlook
+                </a>
+                <a
+                  href={`mailto:?subject=${encodeURIComponent('Purchase Order')}&body=${encodeURIComponent(`View the purchase order:\n${shareData.url}`)}`}
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition"
+                >
+                  Email
+                </a>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(shareData.url); toast.success('Link copied'); }}
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">
+                Opens a read-only PDF of this PO. Link is valid for 7 days — anyone with it can view the order.
+              </p>
+            </div>
+          </div>
+        )}
+
           {isLoading && total > 0 && (
             <DownloadStatus
               downloadedBytes={downloaded}

@@ -7,6 +7,15 @@ const orders="orders"
 
 
 
+// Mint a 7-day public link to the PO's PDF
+export const getShareLink = async (orderId) => {
+  const res = await axios.post(`${API_URL}/${orders}/${orderId}/share-link`, {}, {
+    headers: { "ngrok-skip-browser-warning": "true" },
+    withCredentials: true,
+  });
+  return res.data?.url;
+};
+
 export const getOrders = async (page , limit ) => {
   try {
 
