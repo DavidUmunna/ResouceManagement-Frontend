@@ -12,6 +12,27 @@ import { fetch_RBAC_ordermanagement } from '../../services/rbac_service';
 import { isProd } from "../../components/env";
 import { subscribeToForegroundMessages } from '../../firebaseConfig';
 
+// Loading presentation for the order-list panel: skeleton cards
+const OrdersLoadingSkeleton = () => (
+  <div className="space-y-4 pt-6">
+    {[...Array(4)].map((_, i) => (
+      <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 w-2/3">
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-3 bg-gray-100 rounded w-1/3" />
+            </div>
+            <div className="h-6 w-20 bg-gray-100 rounded-full" />
+          </div>
+          <div className="mt-4 h-3 bg-gray-100 rounded w-full" />
+          <div className="mt-2 h-3 bg-gray-100 rounded w-4/5" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const OrdersDashboard = ({setAuth}) => {
   const {user}=useUser()
   const [orders, setOrders] = useState([]);
@@ -19,6 +40,7 @@ const OrdersDashboard = ({setAuth}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notificationToast, setNotificationToast] = useState(null);
+  const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
   //const [filteredorders,setfilteredorders]=useState([])
 
   const [Data, setData] = useState({
@@ -56,6 +78,8 @@ const OrdersDashboard = ({setAuth}) => {
     }
   const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={}) => {
     setIsLoading(true);
+    // TEMP: artificial delay to test the scoped loading UI — REMOVE before deploy
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     try {
         const { GENERAL_ACCESS_ORDERS = [], DEPARTMENTAL_ACCESS = [], APPROVALS_LIST=[] } = rbacData;
         let response;
@@ -253,14 +277,12 @@ const OrdersDashboard = ({setAuth}) => {
   };
   
 
-  if (isLoading) {
-    return   <div className="p-8 flex justify-center items-center min-h-screen">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-  }
 const shouldShowRightColumn =
   (ADMIN_ROLES_GENERAL?.includes(user?.role) || user?.role === "accounts") &&
-  (Duplicates || UnresolvedOrdersList);
+  Duplicates;
+
+// Approvers get an "Awaiting my approval" queue folded into the main view
+const canSeeApprovalQueue = user?.canApprove;
 
 return (
   <>
@@ -275,46 +297,66 @@ return (
       !shouldShowRightColumn ? 'justify-center' : ''
     }`}
   >
-    <div className={`overflow-y-auto ${
-      shouldShowRightColumn ? 'w-full lg:w-2/3' : 'w-full lg:w-2/3'
-    }`}>
-      <OrderList
-        orders={orders}
-        selectedOrderId={selectedOrderId}
-        setSelectedOrderId={setSelectedOrderId}
-        setOrders={setOrders}
-        error={error}
-        setError={setError}
-        RefreshRequest={RefreshRequest}
-        accRoles={accRoles}
-        EditingRoles={EditingRoles}
-        DeletionRoles={deletionRoles}
-      />
-      <div>
-        <PaginationControls
-          currentPage={Data.pagination?.page}
-          totalPages={Data.pagination?.totalPages}
-          itemsPerPage={Data.pagination?.limit}
-          totalItems={Data.pagination?.total}
-          onPageChange={handlePageChange}
-          onItemsPerPageChange={handleItemsPerPageChange}
-          isLoading={isLoading}
-        />
-      </div>
+    <div className="overflow-y-auto w-full lg:w-2/3">
+      {canSeeApprovalQueue && (
+        <div className="flex gap-2 mb-4 pt-6">
+          <button
+            onClick={() => setShowAwaitingApproval(false)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+              !showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            All Requests
+          </button>
+          <button
+            onClick={() => setShowAwaitingApproval(true)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+              showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Awaiting My Approval
+          </button>
+        </div>
+      )}
+
+      {showAwaitingApproval ? (
+        <UnresolvedOrdersList />
+      ) : isLoading ? (
+        <OrdersLoadingSkeleton />
+      ) : (
+        <>
+          <OrderList
+            orders={orders}
+            selectedOrderId={selectedOrderId}
+            setSelectedOrderId={setSelectedOrderId}
+            setOrders={setOrders}
+            error={error}
+            setError={setError}
+            RefreshRequest={RefreshRequest}
+            accRoles={accRoles}
+            EditingRoles={EditingRoles}
+            DeletionRoles={deletionRoles}
+          />
+          <div>
+            <PaginationControls
+              currentPage={Data.pagination?.page}
+              totalPages={Data.pagination?.totalPages}
+              itemsPerPage={Data.pagination?.limit}
+              totalItems={Data.pagination?.total}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              isLoading={isLoading}
+            />
+          </div>
+        </>
+      )}
     </div>
 
     {shouldShowRightColumn && (
-      <div className="hidden lg:flex w-full lg:w-1/3  flex-col justify-center">
-        {Duplicates && (
-          <div className={`${UnresolvedOrdersList ? 'flex-1' : 'flex justify-center items-center h-full'}`}>
-            <Duplicates orders={orders} onOrderSelect={handleOrderSelect} />
-          </div>
-        )}
-        {UnresolvedOrdersList && (
-          <div className={`${Duplicates ? 'flex-1' : 'flex justify-center items-center h-full mb-10'}`}>
-            <UnresolvedOrdersList/>
-          </div>
-        )}
+      <div className="hidden lg:flex w-full lg:w-1/3 flex-col justify-center">
+        <div className="flex-1">
+          <Duplicates onOrderSelect={handleOrderSelect} />
+        </div>
       </div>
     )}
   </div>

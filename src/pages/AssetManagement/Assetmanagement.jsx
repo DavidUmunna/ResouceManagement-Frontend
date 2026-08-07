@@ -85,10 +85,13 @@ const AssetManagement = ({setAuth}) => {
   const [showInfo,setShowInfo]=useState(false)
   const [ADMIN_ROLES_ASSET_MANAGEMENT,set_ADMIN_ROLES_ASSET_MANAGEMENT]=useState([])
   const [Error,setError]=useState("")
-  // Maintenance expenditure date filter (null filteredExp = show all-time)
+  // Maintenance expenditure
   const [expStart, setExpStart] = useState('');
   const [expEnd, setExpEnd] = useState('');
-  const [filteredExp, setFilteredExp] = useState(null);
+  const [expData, setExpData] = useState({ expenditureBySubCategory: [], totalExpenditure: 0 });
+  const [expFilterActive, setExpFilterActive] = useState(false);
+  const [expSearch, setExpSearch] = useState('');
+  const [expandedExp, setExpandedExp] = useState(null);
   const [expPage, setExpPage] = useState(1);
   const EXP_PAGE_SIZE = 5;
 
@@ -163,7 +166,7 @@ const AssetManagement = ({setAuth}) => {
   useEffect(() => {
     fetch_RBAC()
     fetchData();
-    
+    loadExpenditure();
   }, [setAuth]);
 
   const formatCategory = (category) => {
@@ -205,31 +208,40 @@ const AssetManagement = ({setAuth}) => {
     });
   };
 
-  const applyExpFilter = async () => {
-    setExpPage(1);
-    if (!expStart && !expEnd) {
-      setFilteredExp(null);
-      return;
-    }
+  const loadExpenditure = async (start, end) => {
     try {
       const token = localStorage.getItem('sessionId');
       const API_URL = `${process.env.REACT_APP_API_URL}/api`;
       const res = await axios.get(`${API_URL}/assets/expenditure`, {
-        params: { startDate: expStart || undefined, endDate: expEnd || undefined },
+        params: { startDate: start || undefined, endDate: end || undefined },
         headers: { Authorization: `Bearer ${token}`, "ngrok-skip-browser-warning": "true" },
         withCredentials: true,
       });
-      setFilteredExp(res.data?.data || { expenditureBySubCategory: [], totalExpenditure: 0 });
+      setExpData(res.data?.data || { expenditureBySubCategory: [], totalExpenditure: 0 });
     } catch (err) {
       if (isProd) Sentry.captureException(err);
     }
   };
 
-  const clearExpFilter = () => {
+  const applyExpFilter = async () => {
+    setExpPage(1);
+    setExpandedExp(null);
+    if (!expStart && !expEnd) {
+      setExpFilterActive(false);
+      await loadExpenditure();
+      return;
+    }
+    setExpFilterActive(true);
+    await loadExpenditure(expStart, expEnd);
+  };
+
+  const clearExpFilter = async () => {
     setExpStart('');
     setExpEnd('');
-    setFilteredExp(null);
+    setExpFilterActive(false);
     setExpPage(1);
+    setExpandedExp(null);
+    await loadExpenditure();
   };
 
   const handlePageChange = (newPage) => {
@@ -627,13 +639,20 @@ const AssetManagement = ({setAuth}) => {
 
       {/* Maintenance expenditure by asset sub-category */}
       {(() => {
-        const expData = filteredExp || {
-          expenditureBySubCategory: stats.expenditureBySubCategory,
-          totalExpenditure: stats.totalExpenditure,
-        };
-        const rows = Array.isArray(expData.expenditureBySubCategory) ? expData.expenditureBySubCategory : [];
-        // Show the panel if there is any all-time expenditure, or a filter is active
-        if (rows.length === 0 && !filteredExp) return null;
+        const allRows = Array.isArray(expData.expenditureBySubCategory) ? expData.expenditureBySubCategory : [];
+        // Show the panel if there's any expenditure, or a date filter is active
+        if (allRows.length === 0 && !expFilterActive) return null;
+
+        // Search matches the sub-category name, or any expense's reason / title / PO number
+        const q = expSearch.trim().toLowerCase();
+        const rows = !q ? allRows : allRows.filter((r) => {
+          if (r.subCategory?.toLowerCase().includes(q)) return true;
+          return (r.entries || []).some((en) =>
+            (en.remark || '').toLowerCase().includes(q) ||
+            (en.title || '').toLowerCase().includes(q) ||
+            (en.orderNumber || '').toLowerCase().includes(q)
+          );
+        });
 
         const totalExpPages = Math.ceil(rows.length / EXP_PAGE_SIZE);
         const pagedRows = rows.slice((expPage - 1) * EXP_PAGE_SIZE, expPage * EXP_PAGE_SIZE);
@@ -643,12 +662,25 @@ const AssetManagement = ({setAuth}) => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
               <h3 className="text-sm font-semibold text-gray-700">Maintenance Expenditure by Sub-Category</h3>
               <span className="text-sm font-bold text-gray-800">
-                Total{filteredExp ? ' (filtered)' : ''}: {formatCurrency(expData.totalExpenditure)}
+                Total{expFilterActive ? ' (filtered)' : ''}: {formatCurrency(expData.totalExpenditure)}
               </span>
             </div>
 
-            {/* Date filter for the total */}
+            {/* Search + date filter */}
             <div className="flex flex-wrap items-end gap-2 mb-4">
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-xs text-gray-500 mb-1">Search</label>
+                <div className="relative">
+                  <FiSearch className="absolute left-2.5 top-2.5 text-gray-400 text-sm" />
+                  <input
+                    type="text"
+                    value={expSearch}
+                    onChange={(e) => { setExpSearch(e.target.value); setExpPage(1); }}
+                    placeholder="Sub-category, item, or reason…"
+                    className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">From</label>
                 <input
@@ -673,7 +705,7 @@ const AssetManagement = ({setAuth}) => {
               >
                 Apply
               </button>
-              {filteredExp && (
+              {expFilterActive && (
                 <button
                   onClick={clearExpFilter}
                   className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition"
@@ -697,18 +729,67 @@ const AssetManagement = ({setAuth}) => {
                   {rows.length === 0 ? (
                     <tr>
                       <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
-                        No expenditure in this period
+                        No matching expenditure
                       </td>
                     </tr>
                   ) : (
-                    pagedRows.map((e) => (
-                      <tr key={`${e.category}-${e.subCategory}`} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-medium text-gray-800">{e.subCategory}</td>
-                        <td className="px-4 py-2 text-gray-500">{e.orderCount}</td>
-                        <td className="px-4 py-2 text-gray-500">{formatDate(e.lastExpenseAt)}</td>
-                        <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(e.totalExpenditure)}</td>
-                      </tr>
-                    ))
+                    pagedRows.map((e) => {
+                      const key = `${e.category}-${e.subCategory}`;
+                      const open = expandedExp === key;
+                      return (
+                        <React.Fragment key={key}>
+                          <tr
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => setExpandedExp(open ? null : key)}
+                          >
+                            <td className="px-4 py-2 font-medium text-gray-800">
+                              <span className="inline-flex items-center gap-1">
+                                {open ? <FiChevronUp /> : <FiChevronDown />}
+                                {e.subCategory}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-gray-500">{e.orderCount}</td>
+                            <td className="px-4 py-2 text-gray-500">{formatDate(e.lastExpenseAt)}</td>
+                            <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(e.totalExpenditure)}</td>
+                          </tr>
+                          {open && (
+                            <tr>
+                              <td colSpan="4" className="px-4 py-3 bg-gray-50">
+                                {(e.entries || []).length === 0 ? (
+                                  <p className="text-xs text-gray-500">No individual expenses recorded.</p>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-xs">
+                                      <thead className="text-gray-500 uppercase">
+                                        <tr>
+                                          <th className="px-3 py-1.5 text-left font-medium">Date</th>
+                                          <th className="px-3 py-1.5 text-left font-medium">PO</th>
+                                          <th className="px-3 py-1.5 text-left font-medium">Reason</th>
+                                          <th className="px-3 py-1.5 text-right font-medium">Amount</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-200">
+                                        {e.entries.map((en, idx) => (
+                                          <tr key={idx}>
+                                            <td className="px-3 py-1.5 text-gray-500 whitespace-nowrap">{formatDate(en.at)}</td>
+                                            <td className="px-3 py-1.5 text-gray-600 whitespace-nowrap">{en.orderNumber || '—'}</td>
+                                            <td className="px-3 py-1.5 text-gray-700">
+                                              <div>{en.title || '—'}</div>
+                                              {en.remark ? <div className="text-gray-400">{en.remark}</div> : null}
+                                            </td>
+                                            <td className="px-3 py-1.5 text-right text-gray-800">{formatCurrency(en.amount)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

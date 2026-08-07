@@ -1,78 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FaFlag, FaTimes, FaCopy } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import Pagination from '../../components/Pagination';
 
-const Duplicates = ({ orders, onOrderSelect }) => {
+const GROUPS_PER_PAGE = 5;
+
+const Duplicates = ({ onOrderSelect }) => {
   const [duplicateGroups, setDuplicateGroups] = useState([]);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  // Calculate similarity between two strings
-  const calculateSimilarity = (str1, str2) => {
-    if (!str1 || !str2) return 0;
-    const set1 = new Set(str1.toLowerCase().split(/\s+/));
-    const set2 = new Set(str2.toLowerCase().split(/\s+/));
-    const intersection = new Set([...set1].filter(word => set2.has(word)));
-    const union = new Set([...set1, ...set2]);
-    return union.size > 0 ? intersection.size / union.size : 0;
-  };
-
-  // Compare products between two orders
-  const compareProducts = (products1, products2) => {
-    if (!products1 || !products2) return false;
-    if (products1.length !== products2.length) return false;
-    
-    const productMap1 = {};
-    const productMap2 = {};
-    
-    products1.forEach(p => productMap1[`${p.name}-${p.quantity}`] = true);
-    products2.forEach(p => productMap2[`${p.name}-${p.quantity}`] = true);
-    
-    const keys1 = Object.keys(productMap1);
-    const keys2 = Object.keys(productMap2);
-    
-    if (keys1.length !== keys2.length) return false;
-    
-    return keys1.every(key => productMap2[key]);
-  };
-
-  // Detect duplicate orders
+  // Detection runs server-side over all orders the user can see (not just the
+  // current page), with proper transitive grouping.
   useEffect(() => {
-    const groups = [];
-    const processed = new Set();
-    
-    orders.forEach((order1, i) => {
-      if (processed.has(i)) return;
-      
-      const group = [order1];
-      
-      orders.slice(i + 1).forEach((order2, j) => {
-        const originalIndex = i + j + 1;
-        if (processed.has(originalIndex)) return;
-        
-        // Compare products
-        const sameProducts = compareProducts(order1.products, order2.products);
-        
-        // Compare remarks
-        const remarkSimilarity = calculateSimilarity(
-          order1.remarks || '', 
-          order2.remarks || ''
-        );
-        
-        if (sameProducts || remarkSimilarity >= similarityThreshold) {
-          group.push(order2);
-          processed.add(originalIndex);
+    let cancelled = false;
+    const fetchDuplicates = async () => {
+      setLoading(true);
+      // TEMP: artificial delay to test the duplicates loading skeleton — REMOVE before deploy
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+        const res = await axios.get(`${API_URL}/orders/duplicates`, {
+          params: { threshold: similarityThreshold },
+          headers: { 'ngrok-skip-browser-warning': 'true' },
+          withCredentials: true,
+        });
+        if (!cancelled) {
+          setDuplicateGroups(res.data?.data || []);
+          setPage(1);
         }
-      });
-      
-      if (group.length > 1) {
-        groups.push(group);
-        processed.add(i);
+      } catch {
+        if (!cancelled) setDuplicateGroups([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    });
-    
-    setDuplicateGroups(groups);
-  }, [orders, similarityThreshold]);
+    };
+    fetchDuplicates();
+    return () => { cancelled = true; };
+  }, [similarityThreshold]);
+
+  // Keep the current page within range as the group count changes
+  useEffect(() => {
+    const totalPages = Math.ceil(duplicateGroups.length / GROUPS_PER_PAGE);
+    if (page > totalPages) setPage(totalPages || 1);
+  }, [duplicateGroups, page]);
 
   const toggleGroup = (index) => {
     setExpandedGroup(expandedGroup === index ? null : index);
@@ -106,7 +80,7 @@ const Duplicates = ({ orders, onOrderSelect }) => {
           <label className="mr-2 text-sm text-gray-600">Similarity:</label>
           <select 
             value={similarityThreshold}
-            onChange={(e) => setSimilarityThreshold(parseFloat(e.target.value))}
+            onChange={(e) => { setSimilarityThreshold(parseFloat(e.target.value)); setPage(1); }}
             className="border border-gray-300 rounded px-2 py-1 text-sm"
           >
             <option value="0.5">Low</option>
@@ -116,14 +90,32 @@ const Duplicates = ({ orders, onOrderSelect }) => {
         </div>
       </div>
 
-      {duplicateGroups.length === 0 ? (
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="border border-gray-200 bg-white rounded-lg p-4">
+              <div className="animate-pulse flex items-center">
+                <div className="bg-gray-200 rounded-full w-6 h-6 mr-3" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : duplicateGroups.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           No duplicate requests found
         </div>
       ) : (
         <div className="space-y-4 ">
-          {duplicateGroups.map((group, groupIndex) => (
-            <motion.div 
+          {duplicateGroups
+            .slice((page - 1) * GROUPS_PER_PAGE, page * GROUPS_PER_PAGE)
+            .map((group, localIndex) => {
+            const groupIndex = (page - 1) * GROUPS_PER_PAGE + localIndex;
+            return (
+            <motion.div
               key={groupIndex}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -226,7 +218,16 @@ const Duplicates = ({ orders, onOrderSelect }) => {
                 )}
               </AnimatePresence>
             </motion.div>
-          ))}
+            );
+          })}
+
+          <Pagination
+            page={page}
+            totalPages={Math.ceil(duplicateGroups.length / GROUPS_PER_PAGE)}
+            total={duplicateGroups.length}
+            limit={GROUPS_PER_PAGE}
+            onPage={setPage}
+          />
         </div>
       )}
     </div>
