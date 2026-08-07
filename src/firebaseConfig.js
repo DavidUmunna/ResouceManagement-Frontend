@@ -13,6 +13,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const rawApiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
+const VAPID_KEY = "BLb5LA3GmmC9uRCzoYT4t6bapOPqv2-3_Bcch8pCNfK4W49Ylyz1kZ1noALOhns6904Vu7Ma5ZAzN09vOhFJCL0";
 
 export let messaging = null;
 
@@ -49,7 +50,7 @@ export async function EnableNotifications() {
       }
 
       const currentToken = await getToken(messaging, {
-        vapidKey: "BLb5LA3GmmC9uRCzoYT4t6bapOPqv2-3_Bcch8pCNfK4W49Ylyz1kZ1noALOhns6904Vu7Ma5ZAzN09vOhFJCL0",
+        vapidKey: VAPID_KEY,
         serviceWorkerRegistration: registration,
       });
 
@@ -67,6 +68,35 @@ export async function EnableNotifications() {
     }
   } catch (error) {
     console.error("Error enabling notifications:", error);
+    return null;
+  }
+}
+
+// Silently refresh + persist the FCM token on app load — ONLY if the user has
+// already granted notification permission (no prompt). FCM tokens rotate and
+// expire; this keeps each logged-in user's saved token live instead of relying
+// on the one-time manual "Enable Notifications" click.
+export async function ensureFreshToken() {
+  try {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return null;
+    if (!rawApiUrl) return null;
+
+    if (!messaging) messaging = getMessaging(app);
+
+    let registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+    if (!registration) registration = await registerServiceWorker();
+
+    const currentToken = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration,
+    });
+
+    if (currentToken) {
+      await axios.post(`${rawApiUrl}/api/save-token`, { currentToken }, { withCredentials: true });
+    }
+    return currentToken || null;
+  } catch (error) {
+    console.error("ensureFreshToken failed:", error);
     return null;
   }
 }

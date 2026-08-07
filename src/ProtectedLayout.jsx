@@ -5,6 +5,7 @@ import AppLayout   from "./components/AppLayout";
 import RoleGuard   from "./components/RoleGuard";
 import { ROUTE_ROLES as R } from "./constants/roles";
 import { useVersionCheck } from "./hooks/useVersionCheck";
+import { ensureFreshToken } from "./firebaseConfig";
 
 // Eagerly loaded — small or always-needed pages
 import CreateOrder         from "./pages/CreateOrder";
@@ -87,6 +88,13 @@ function NewVersionBanner() {
 
 export default function ProtectedLayout({ isauthenticated, setisauthenticated }) {
   const [dashboardIsLoading, setDashboardIsLoading] = React.useState(false);
+
+  // Keep the logged-in user's FCM token fresh (silent; only if permission granted)
+  React.useEffect(() => {
+    if (isauthenticated) {
+      ensureFreshToken();
+    }
+  }, [isauthenticated]);
 
   if (!isauthenticated) {
     return <Navigate to="/adminlogin" replace />;
