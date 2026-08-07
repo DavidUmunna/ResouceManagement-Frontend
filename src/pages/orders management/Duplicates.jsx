@@ -19,8 +19,6 @@ const Duplicates = ({ onOrderSelect }) => {
     let cancelled = false;
     const fetchDuplicates = async () => {
       setLoading(true);
-      // TEMP: artificial delay to test the duplicates loading skeleton — REMOVE before deploy
-      await new Promise((resolve) => setTimeout(resolve, 2000));
       try {
         const API_URL = `${process.env.REACT_APP_API_URL}/api`;
         const res = await axios.get(`${API_URL}/orders/duplicates`, {

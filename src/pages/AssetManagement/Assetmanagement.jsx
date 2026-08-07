@@ -758,9 +758,9 @@ const AssetManagement = ({setAuth}) => {
                                 {(e.entries || []).length === 0 ? (
                                   <p className="text-xs text-gray-500">No individual expenses recorded.</p>
                                 ) : (
-                                  <div className="overflow-x-auto">
+                                  <div className="overflow-auto max-h-48">
                                     <table className="min-w-full text-xs">
-                                      <thead className="text-gray-500 uppercase">
+                                      <thead className="text-gray-500 uppercase sticky top-0 bg-gray-50">
                                         <tr>
                                           <th className="px-3 py-1.5 text-left font-medium">Date</th>
                                           <th className="px-3 py-1.5 text-left font-medium">PO</th>

@@ -78,8 +78,6 @@ const OrdersDashboard = ({setAuth}) => {
     }
   const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={}) => {
     setIsLoading(true);
-    // TEMP: artificial delay to test the scoped loading UI — REMOVE before deploy
-    await new Promise((resolve) => setTimeout(resolve, 2000));
     try {
         const { GENERAL_ACCESS_ORDERS = [], DEPARTMENTAL_ACCESS = [], APPROVALS_LIST=[] } = rbacData;
         let response;
