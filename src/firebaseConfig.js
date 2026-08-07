@@ -112,13 +112,14 @@ export function subscribeToForegroundMessages(callback) {
       return;
     }
 
-    const title = payload?.notification?.title || "New notification";
-    const body = payload?.notification?.body || "You have a new update.";
+    // Data-only messages carry title/body in `data`
+    const title = payload?.data?.title || payload?.notification?.title || "New notification";
+    const body = payload?.data?.body || payload?.notification?.body || "You have a new update.";
 
     if (Notification.permission === "granted") {
-      navigator.serviceWorker.getRegistration().then((registration) => {
+      navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').then((registration) => {
         if (registration) {
-          registration.showNotification(title, { body });
+          registration.showNotification(title, { body, data: payload?.data || {} });
         }
       });
     }

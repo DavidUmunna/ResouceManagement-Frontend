@@ -5,7 +5,7 @@ import AppLayout   from "./components/AppLayout";
 import RoleGuard   from "./components/RoleGuard";
 import { ROUTE_ROLES as R } from "./constants/roles";
 import { useVersionCheck } from "./hooks/useVersionCheck";
-import { ensureFreshToken } from "./firebaseConfig";
+import { ensureFreshToken, subscribeToForegroundMessages } from "./firebaseConfig";
 
 // Eagerly loaded — small or always-needed pages
 import CreateOrder         from "./pages/CreateOrder";
@@ -94,6 +94,12 @@ export default function ProtectedLayout({ isauthenticated, setisauthenticated })
     if (isauthenticated) {
       ensureFreshToken();
     }
+  }, [isauthenticated]);
+
+  // Show foreground notifications app-wide (any page), not just the orders view
+  React.useEffect(() => {
+    if (!isauthenticated) return undefined;
+    return subscribeToForegroundMessages(); // no callback → renders the notification
   }, [isauthenticated]);
 
   if (!isauthenticated) {
