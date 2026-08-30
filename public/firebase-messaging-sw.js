@@ -19,6 +19,7 @@ messaging.onBackgroundMessage(function(payload) {
 	const notificationTitle = payload?.notification?.title || payload?.data?.title || 'New notification';
 	const notificationOptions = {
 		body: payload?.notification?.body || payload?.data?.body || 'You have a new update.',
+		icon: '/haldenlogo_1.png',   // Halden logo in the notification banner
 		data: {
 			url: targetPath,
 			orderId: orderId || ''

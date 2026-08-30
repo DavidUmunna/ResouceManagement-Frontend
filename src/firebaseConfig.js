@@ -119,7 +119,11 @@ export function subscribeToForegroundMessages(callback) {
     if (Notification.permission === "granted") {
       navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').then((registration) => {
         if (registration) {
-          registration.showNotification(title, { body, data: payload?.data || {} });
+          registration.showNotification(title, {
+            body,
+            icon: '/haldenlogo_1.png',   // Halden logo in the notification banner
+            data: payload?.data || {},
+          });
         }
       });
     }
