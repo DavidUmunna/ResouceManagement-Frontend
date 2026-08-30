@@ -1,16 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { colorPalette } from './enterpriseUI.constants';
 
 export const EnterpriseCard = ({
   children,
   className = '',
   hoverEffect = true,
-  border = false,
-  shadow = 'md',
+  shadow = 'none', // flat enterprise cards: a subtle border, not a shadow
   ...props
 }) => {
   const shadowClasses = {
+    none: '',
     sm: 'shadow-sm',
     md: 'shadow-md',
     lg: 'shadow-lg',
@@ -19,10 +18,8 @@ export const EnterpriseCard = ({
 
   return (
     <motion.div
-      whileHover={hoverEffect ? { y: -4, boxShadow: `0 10px 25px -5px rgba(0,0,0,0.1)` } : {}}
-      className={`bg-white rounded-xl ${shadowClasses[shadow]} ${
-        border ? `border border-${colorPalette.neutral[200]}` : ''
-      } overflow-x-auto max-w-full ${className}`}
+      whileHover={hoverEffect ? { y: -2 } : {}}
+      className={`bg-white rounded-xl border border-gray-200 ${shadowClasses[shadow] || ''} overflow-x-auto max-w-full ${className}`}
       style={{ whiteSpace: 'nowrap' }}
       {...props}
     >

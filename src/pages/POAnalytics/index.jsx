@@ -278,8 +278,8 @@ export default function POAnalyticsPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Department spend */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-700">Spend by Department</h2>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+          <h2 className="text-base font-semibold text-gray-800">Spend by Department</h2>
           {loading ? (
             <ChartSkeleton height={260} />
           ) : deptChartData.length === 0 ? (
@@ -314,8 +314,8 @@ export default function POAnalyticsPage() {
         </div>
 
         {/* Status breakdown */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-gray-700">Spend &amp; Orders by Status</h2>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+          <h2 className="text-base font-semibold text-gray-800">Spend &amp; Orders by Status</h2>
           {loading ? (
             <ChartSkeleton height={260} />
           ) : statusChartData.length === 0 ? (
@@ -358,10 +358,10 @@ export default function POAnalyticsPage() {
       {/* Department detail table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">Department Detail</h2>
+          <h2 className="text-base font-semibold text-gray-800">Department Detail</h2>
         </div>
         {loading ? (
-          <div className="p-5 space-y-3">
+          <div className="p-6 space-y-3">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="h-10 rounded bg-gray-100 animate-pulse" />
             ))}

@@ -54,7 +54,7 @@ const CookieConsent = () => {
                      p-5 sm:p-6"
         >
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
               <span className="text-xl" aria-hidden="true">🍪</span>
             </div>
             <div className="flex-1">
@@ -63,7 +63,7 @@ const CookieConsent = () => {
                 We use cookies to keep you signed in, remember your preferences, and understand how
                 ResourceFlow is used so we can improve it. You can accept all cookies or reject
                 non‑essential ones. Read our{' '}
-                <Link to="/cookies" className="text-indigo-600 font-medium hover:underline">
+                <Link to="/cookies" className="text-blue-600 font-medium hover:underline">
                   cookie policy
                 </Link>{' '}
                 for details.
@@ -72,8 +72,8 @@ const CookieConsent = () => {
               <div className="mt-4 flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => decide('accepted')}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold
-                             hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200 transition"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold
+                             hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition"
                 >
                   Accept all
                 </button>

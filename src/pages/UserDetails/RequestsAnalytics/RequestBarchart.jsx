@@ -153,7 +153,7 @@ const RequestBarChart = ({DepartmentalAccess=[],GeneralAccess=[]}) => {
  
 
   return (
-  <div className="w-full bg-white shadow-lg p-5 rounded-2xl max-h-screen flex flex-col">
+  <div className="w-full bg-white border border-gray-200 p-6 rounded-xl max-h-screen flex flex-col">
   {/* Filters */}
   <div className="mb-5 flex flex-col  md:w-full sm:flex-wrap gap-3">
     <div className="w-full sm:w-full md:w-full">

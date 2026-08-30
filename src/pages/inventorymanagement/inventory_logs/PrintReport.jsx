@@ -20,8 +20,8 @@ const PrintReport = ({filteredLogs}) => {
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
             .status-pending { color: #FF9800; font-weight: bold; }
-            .status-completed { color: #4CAF50; font-weight: bold; }
-            .status-returned { color: #2196F3; font-weight: bold; }
+            .status-completed { color: #16a34a; font-weight: bold; }
+            .status-returned { color: #2563eb; font-weight: bold; }
           </style>
         </head>
         <body>

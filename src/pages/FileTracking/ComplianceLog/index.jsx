@@ -91,7 +91,7 @@ const ComplianceLog = ({ serviceInstance }) => {
       </div>
 
       {error && (
-        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -184,7 +184,7 @@ const ComplianceLog = ({ serviceInstance }) => {
           type="button"
           onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
           disabled={page === 1 || loading}
-          className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
         >
           Previous
         </button>
@@ -195,7 +195,7 @@ const ComplianceLog = ({ serviceInstance }) => {
           type="button"
           onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={page >= totalPages || loading}
-          className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
         >
           Next
         </button>

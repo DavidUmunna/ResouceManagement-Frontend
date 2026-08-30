@@ -1,6 +1,53 @@
-import React from "react"
+import React, { useState } from "react"
 import { FiTrash2, FiEdit2 } from 'react-icons/fi';
-const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem})=>{
+import { projectLabel, effectiveRate, skipRevenue, usd } from './pricing';
+
+// Inline editable per-skip rate override. Shows the effective rate; editing it
+// sets an override for this skip only (falls back to the project rate when blank).
+function RateCell({ item, onSetRate }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const hasOverride = item.dailyRateUsdOverride != null && item.dailyRateUsdOverride !== "";
+  const rate = effectiveRate(item);
+
+  const save = async () => {
+    setBusy(true);
+    try { await onSetRate(item._id, val); setEditing(false); }
+    catch (e) { /* parent surfaces errors; keep the field open */ }
+    finally { setBusy(false); }
+  };
+
+  if (!onSetRate) return <span>{rate ? usd(rate) : "—"}</span>;
+  if (!editing) {
+    return (
+      <button
+        onClick={() => { setEditing(true); setVal(hasOverride ? String(item.dailyRateUsdOverride) : ""); }}
+        className="inline-flex items-center gap-1 hover:underline"
+        title={hasOverride ? "Per-skip override — click to edit" : "Project rate — click to override for this skip"}
+      >
+        {rate ? usd(rate) : <span className="text-red-500">set</span>}
+        {hasOverride && <span className="text-[10px] text-blue-500">(override)</span>}
+      </button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 justify-end">
+      <input
+        type="number" min="0" autoFocus value={val}
+        onChange={(e) => setVal(e.target.value)}
+        placeholder="project rate"
+        onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+        className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right"
+      />
+      <button disabled={busy} onClick={save} className="text-xs bg-blue-600 text-white px-2 py-1 rounded">Save</button>
+      <button onClick={() => setEditing(false)} className="text-xs text-gray-500">✕</button>
+    </span>
+  );
+}
+
+const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem,onSetRate})=>{
     return (
         <>
 
@@ -74,12 +121,15 @@ const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem
                     onClick={() => requestSort('lastUpdated')}
                     className="w-1/12 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 whitespace-nowrap"
                   >Last Updated</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Project</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Rate $/day</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Revenue</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="12" className="px-4 py-4 text-center text-gray-500">No skip items found</td>
+                    <td colSpan="20" className="px-4 py-4 text-center text-gray-500">No skip items found</td>
                   </tr>
                 ) :
         
@@ -147,7 +197,15 @@ const SkipsTable=({requestSort,filteredItems,formatCategory,setupEdit,deleteItem
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {item.lastUpdated?.split('T')[0]}
                         </td>
-                        
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {projectLabel(item) || <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                          <RateCell item={item} onSetRate={onSetRate} />
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                          {usd(skipRevenue(item))}
+                        </td>
                         </tr>
                         </React.Fragment>
                       )

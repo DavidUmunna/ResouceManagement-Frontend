@@ -25,11 +25,11 @@ export const ScheduleList = () => {
   };
 
   return (
-    <div className="p-6 bg-white shadow-xl rounded-xl mt-6">
-      <h1 className="text-2xl font-bold mb-6">Schedules Awaiting MD Review</h1>
-      
+    <div className="p-6 bg-white border border-gray-200 rounded-xl mt-6">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">Schedules Awaiting MD Review</h2>
+
       {isLoading ? (
-        <p>Loading schedules...</p>
+        <p className="text-sm text-gray-500">Loading schedules…</p>
       ) : (
         <div
         className="

@@ -6,7 +6,7 @@ const NavbarSkeleton = () => {
       <div className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: brand and desktop nav links */}
         <div className="flex items-center gap-4 sm:gap-6">
-          <div className="h-8 w-8 rounded-md bg-gray-200" />
+          <div className="h-8 w-8 rounded-lg bg-gray-200" />
           <div className="h-4 w-28 rounded bg-gray-200" />
 
           <div className="hidden md:flex items-center gap-4 ml-4">
@@ -19,9 +19,9 @@ const NavbarSkeleton = () => {
 
         {/* Right: search/action/avatar placeholders */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden sm:block h-9 w-32 rounded-md bg-gray-200" />
-          <div className="h-9 w-9 rounded-md bg-gray-200" />
-          <div className="h-9 w-9 rounded-md bg-gray-200" />
+          <div className="hidden sm:block h-9 w-32 rounded-lg bg-gray-200" />
+          <div className="h-9 w-9 rounded-lg bg-gray-200" />
+          <div className="h-9 w-9 rounded-lg bg-gray-200" />
           <div className="h-9 w-9 rounded-full bg-gray-200" />
         </div>
       </div>

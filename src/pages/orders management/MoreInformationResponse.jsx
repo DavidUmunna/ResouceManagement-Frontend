@@ -253,7 +253,7 @@ const MoreInformationResponse = ({
 
           <form onSubmit={(e) => handleResponseSubmit(e, order._id)} className="p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
               {error}
             </div>
           )}
@@ -262,7 +262,7 @@ const MoreInformationResponse = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Admins Requesting Information
             </label>
-            <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
               {isFetching ? (
                 <p className="text-gray-500">Loading admins...</p>
               ) : approvalNames.length > 0 ? (
@@ -295,7 +295,7 @@ const MoreInformationResponse = ({
               rows="4"
               value={ResponseByOrder[order._id] || ""}
               onChange={handleResponseChange(order._id)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               placeholder="Type your response here..."
               disabled={isSubmitting}
               required
@@ -306,14 +306,14 @@ const MoreInformationResponse = ({
             <button
               type="button"
               onClick={() => handleCloseModal(order._id)}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               disabled={isSubmitting}
               >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               disabled={isSubmitting || isFetching}
               >
               {isSubmitting ? (

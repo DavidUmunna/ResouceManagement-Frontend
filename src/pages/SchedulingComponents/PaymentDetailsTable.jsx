@@ -198,8 +198,8 @@ const PaymentDetailsTable=({FormData,setFormData,initialData,PaymentItem,setPaym
             </div>
             </div>
         )}
-        <div className='flex justify-center border-2 rounded-md'>
-          <table className='min-w-full divide-y divide-gray-200 border-2 rounded-md'>
+        <div className='flex justify-center border-2 rounded-lg'>
+          <table className='min-w-full divide-y divide-gray-200 border-2 rounded-lg'>
 
           <thead className='bg-gray-50'>
             <tr className="px-6 py-4 ">

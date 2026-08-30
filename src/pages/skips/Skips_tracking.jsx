@@ -2,7 +2,7 @@
 
 import * as Sentry from '@sentry/react';
 import React, { useState, useEffect } from 'react';
-import { FiPlus,FiSearch, FiCalendar } from 'react-icons/fi';
+import { FiSearch, FiCalendar } from 'react-icons/fi';
 import { useUser } from '../../components/usercontext';
 import axios from 'axios';
 import PaginationControls from '../../components/Paginationcontrols';
@@ -373,6 +373,16 @@ const SkipsManagement = () => {
     }
   };
 
+  // Set a per-skip daily rate override (used for the inline price edit).
+  const handleSetRate = async (id, rate) => {
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+    await axios.put(`${API_URL}/skips/${id}/rate`, { dailyRateUsd: rate === "" ? null : Number(rate) }, {
+      withCredentials: true,
+      headers: { "ngrok-skip-browser-warning": "true" },
+    });
+    fetchData(); // Refresh data
+  };
+
   const resetForm = () => {
     setFormData({
     skip_id: '',
@@ -552,26 +562,16 @@ const SkipsManagement = () => {
           >
             Export Excel
           </button>
-          
-          {/* Add Skip Button */}
-          <button
-            onClick={() => {
-              setEditingItem(null);
-              resetForm();
-              setShowForm(true);
-            }}
-            className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-[1.02] text-sm sm:text-base"
-          >
-            <FiPlus className="mr-1 sm:mr-2" />
-            <span className="whitespace-nowrap">Add Skip</span>
-          </button>
+          {/* Skip creation now lives in the RFID module (/admin/skip-tracking),
+              which captures project + vendor + rental. This page is the register /
+              insights / export view; existing skips are still editable inline. */}
         </div>
       </div>
 
       {/* Date range display and presets */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div className="text-sm text-gray-600">
-          Showing data from {formatDisplayDate(dateRange.startDate)} to {formatDisplayDate(dateRange.endDate)}
+          Showing data from {dateRange.startDate ? formatDisplayDate(dateRange.startDate) : 'N/A'} to {dateRange.endDate ? formatDisplayDate(dateRange.endDate) : 'N/A'}
         </div>
         
         <div className="flex gap-2">
@@ -615,6 +615,7 @@ const SkipsManagement = () => {
       formatCategory={formatCategory}
       setupEdit={setupEdit}
       deleteItem={deleteItem}
+      onSetRate={handleSetRate}
       />
 
       {/* Pagination */}

@@ -51,7 +51,7 @@ const PaginationControls = ({
           <button
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1 || isLoading}
-            className="px-3 py-1 border rounded-md disabled:opacity-50 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-100 transition-colors"
             aria-label="First page"
           >
             «
@@ -60,7 +60,7 @@ const PaginationControls = ({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || isLoading}
-            className="px-3 py-1 border rounded-md disabled:opacity-50 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-100 transition-colors"
             aria-label="Previous page"
           >
             ‹
@@ -71,7 +71,7 @@ const PaginationControls = ({
               key={page}
               onClick={() => onPageChange(page)}
               disabled={isLoading}
-              className={`w-10 h-10 rounded-md ${
+              className={`w-10 h-10 rounded-lg ${
                 currentPage === page
                   ? 'bg-blue-500 text-white'
                   : 'border hover:bg-gray-100'
@@ -85,7 +85,7 @@ const PaginationControls = ({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages || isLoading}
-            className="px-3 py-1 border rounded-md disabled:opacity-50 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-100 transition-colors"
             aria-label="Next page"
           >
             ›
@@ -94,7 +94,7 @@ const PaginationControls = ({
           <button
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages || isLoading}
-            className="px-3 py-1 border rounded-md disabled:opacity-50 hover:bg-gray-100 transition-colors"
+            className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-100 transition-colors"
             aria-label="Last page"
           >
             »
@@ -107,7 +107,7 @@ const PaginationControls = ({
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
             disabled={isLoading}
-            className="border rounded-md px-2 py-1 text-sm"
+            className="border rounded-lg px-2 py-1 text-sm"
           >
             {[10, 20, 50,100,500,1000,1500,3000].map((size) => (
               <option key={size} value={size}>

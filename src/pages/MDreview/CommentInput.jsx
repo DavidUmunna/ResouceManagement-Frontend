@@ -6,7 +6,7 @@ export const CommentInput = ({ value, onChange }) => (
     <textarea
       value={value}
       onChange={onChange}
-      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
       rows={3}
       placeholder="Optional comments for Accounts team"
     />

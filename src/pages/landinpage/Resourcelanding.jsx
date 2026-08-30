@@ -55,7 +55,7 @@ const Resourcelanding = () => {
                 viewport={{ once: true }}
               >
                 <p className="text-3xl sm:text-4xl font-extrabold text-white">{s.value}</p>
-                <p className="mt-1 text-sm text-indigo-100">{s.label}</p>
+                <p className="mt-1 text-sm text-blue-100">{s.label}</p>
               </motion.div>
             ))}
           </div>
@@ -85,9 +85,9 @@ const Resourcelanding = () => {
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
             >
-              <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                 <svg 
-                  className="w-7 h-7 text-indigo-600" 
+                  className="w-7 h-7 text-blue-600" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -120,9 +120,9 @@ const Resourcelanding = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               viewport={{ once: true }}
             >
-              <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                 <svg 
-                  className="w-7 h-7 text-indigo-600" 
+                  className="w-7 h-7 text-blue-600" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -154,9 +154,9 @@ const Resourcelanding = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+              <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-6">
                 <svg 
-                  className="w-7 h-7 text-indigo-600" 
+                  className="w-7 h-7 text-blue-600" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -205,7 +205,7 @@ const Resourcelanding = () => {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center text-lg font-bold mb-6">
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-bold mb-6">
                   {s.step}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">{s.title}</h3>
@@ -237,8 +237,8 @@ const Resourcelanding = () => {
           <motion.button
             onClick={() => navigate("/companydata")}
             className="mt-4 px-8 py-4 border border-transparent text-lg font-semibold rounded-lg 
-                      text-indigo-700 bg-white hover:bg-indigo-50 transition-all duration-300 
-                      transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                      text-blue-700 bg-white hover:bg-blue-50 transition-all duration-300 
+                      transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

@@ -127,7 +127,7 @@ export const Dashboard = ({ setLayoutLoading }) => {
                         className="min-h-screen bg-gray-300 mt-16"
                     >
                         <h1 className="text-3xl font-bold text-gray-800">Welcome {user?.name.split(" ").slice(-1)[0]}</h1>
-                        <p className="text-gray-600 mt-2">Manage your Requests efficiently.</p>
+                        <p className="text-gray-600 mt-2 mb-4">Manage your Requests efficiently.</p>
                         <UserDetails
                             user={user}
                             rejectedOrders={rejectedOrders}

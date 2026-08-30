@@ -5,6 +5,7 @@ import { fetch_RBAC_maintenance } from "../services/rbac_service";
 import { FileText, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "../components/usercontext";
+import FollowUpCreatePanel from "./FollowUpCreatePanel";
 import { FiInfo } from "react-icons/fi";
 
 const containerVariants = {
@@ -42,6 +43,7 @@ const CreateOrder = () => {
   const [assetSubCategory, setAssetSubCategory] = useState("");
   const [assetSubCategories, setAssetSubCategories] = useState([]);
   const [maintenanceAccess, setMaintenanceAccess] = useState({ departments: [], categoryByDepartment: {} });
+  const [mode, setMode] = useState("new"); // "new" request vs "followup" on an existing one
 
   // Backend (RBAC) is the source of truth for which departments may raise
   // maintenance requests and the asset category each maps to.
@@ -245,7 +247,21 @@ const CreateOrder = () => {
           animate="visible"
         >
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Create Purchase Request</h2>
-          <motion.form onSubmit={handleSubmit} 
+
+          {/* FR-1: choose to create a new request or follow up on an existing one */}
+          <div className="inline-flex bg-gray-100 rounded-lg p-1 mb-6">
+            {[["new", "New Request"], ["followup", "Follow Up on Existing Request"]].map(([key, lbl]) => (
+              <button key={key} type="button" onClick={() => setMode(key)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-lg ${mode === key ? "bg-white shadow text-gray-800" : "text-gray-500"}`}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+
+          {mode === "followup" && <FollowUpCreatePanel user={user} />}
+
+          {mode === "new" && (
+          <motion.form onSubmit={handleSubmit}
           className="space-y-4">
 
             <motion.div className="mb-4" variants={inputVariants} initial="hidden" animate="visible">
@@ -511,6 +527,7 @@ const CreateOrder = () => {
             </div>
           )}
           </motion.form>
+          )}
         </motion.div>
       </motion.div>
     </div>

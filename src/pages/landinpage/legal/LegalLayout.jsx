@@ -48,9 +48,9 @@ const LegalLayout = ({ title, lastUpdated, intro, sections = [] }) => (
         </div>
 
         <div className="mt-16 pt-8 border-t border-gray-200 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          <Link to="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</Link>
-          <Link to="/terms" className="text-indigo-600 hover:underline">Terms of Service</Link>
-          <Link to="/cookies" className="text-indigo-600 hover:underline">Cookie Policy</Link>
+          <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+          <Link to="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>
+          <Link to="/cookies" className="text-blue-600 hover:underline">Cookie Policy</Link>
           <Link to="/" className="text-gray-500 hover:underline ml-auto">← Back to home</Link>
         </div>
       </div>

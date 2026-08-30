@@ -161,14 +161,14 @@ export default function ExportMemoModal({
           <div className="flex justify-end gap-3 border-t p-4">
             <button 
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300"
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300"
             >
               Cancel
             </button>
             <button 
               onClick={handleExport}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-70 flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-70 flex items-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -191,7 +191,7 @@ export default function ExportMemoModal({
 
       {/* Toast Notification */}
       {toast?.show && (
-        <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-md shadow-lg ${
+        <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
           toast.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
         }`}>
           <div className="flex items-center gap-3">

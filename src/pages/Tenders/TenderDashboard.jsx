@@ -49,7 +49,7 @@ const TenderDashboard = () => {
     const d = new Date(date);
     const diff = (d - now) / (1000 * 60 * 60 * 24);
     if (diff < 0) return "text-red-600 font-semibold";
-    if (diff <= 3) return "text-amber-600 font-semibold";
+    if (diff <= 3) return "text-yellow-600 font-semibold";
     return "text-gray-800";
   };
 

@@ -34,18 +34,18 @@ const Navbar = () => {
               <Link
                 key={link.id}
                 to={link.to}
-                className=" cursor-pointer text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                className=" cursor-pointer text-gray-600 hover:text-blue-600 px-3 py-2 rounded-lg text-sm font-medium"
               >
                 {link.text}
               </Link>
             ))}
             <button
             onClick={()=>navigate("/companydata")}            
-            className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm">
+            className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
               Get Started
             </button>
             <button
-              className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm"
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
               onClick={() => navigate("/adminlogin")}
             >
               Log In
@@ -56,7 +56,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={toggleMobileMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-gray-600 hover:text-blue-600 focus:outline-none"
               aria-expanded="false"
             >
               {isMobileMenuOpen ? (
@@ -84,7 +84,7 @@ const Navbar = () => {
                 <Link
                   key={item.id}
                   to={item.to}
-                  className=" cursor-pointer block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-indigo-600  hover:bg-gray-50 "
+                  className=" cursor-pointer block px-3 py-2 rounded-lg text-base font-medium text-gray-600 hover:text-blue-600  hover:bg-gray-50 "
                  
                 
                 >
@@ -93,11 +93,11 @@ const Navbar = () => {
               ))}
               <button
               onClick={()=>navigate("/companydata")}
-               className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gray-800 hover:bg-indigo-700">
+               className="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-white bg-gray-800 hover:bg-blue-700">
                 Get Started
               </button>
               <button
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-gray-800 hover:bg-indigo-700"
+                className="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-white bg-gray-800 hover:bg-blue-700"
                 onClick={() => {
                   navigate("/adminlogin");
                   setIsMobileMenuOpen(false);

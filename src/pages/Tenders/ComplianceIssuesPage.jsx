@@ -3,7 +3,7 @@ import { fetchComplianceIssues } from "../../services/tenderService";
 
 const severityClass = {
   high: "text-red-700 bg-red-100",
-  medium: "text-amber-700 bg-amber-100",
+  medium: "text-yellow-700 bg-yellow-100",
   low: "text-green-700 bg-green-100",
 };
 
@@ -78,8 +78,8 @@ const ComplianceIssuesPage = ({ tenderId }) => {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-2 text-xs">
-                      <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">Upload</button>
-                      <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">Mark Resolved</button>
+                      <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">Upload</button>
+                      <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">Mark Resolved</button>
                     </div>
                   </td>
                 </tr>

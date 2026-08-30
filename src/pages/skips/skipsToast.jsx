@@ -11,7 +11,7 @@ const SkipsToast=({setToast,toast})=>{
         return (
             <>
             {toast?.show && (
-                <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-md shadow-lg ${
+                <div className={`fixed bottom-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
           toast.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
         }`}>
           <div className="flex items-center gap-3">

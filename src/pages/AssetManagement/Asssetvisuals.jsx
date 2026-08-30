@@ -13,8 +13,8 @@ import {
 
 // Color mapping for each condition
 const CONDITION_COLORS = {
-  New: '#4CAF50',      // Green
-  Used: '#2196F3',     // Blue
+  New: '#16a34a',      // Green
+  Used: '#2563eb',     // Blue
   Refurbished: '#FFC107', // Amber
   Damaged: '#F44336'    // Red
 };

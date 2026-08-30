@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { EnterpriseCard } from './EnterpriseCard';
-import { colorPalette, typography} from './enterpriseUI.constants';
+import { colorPalette } from './enterpriseUI.constants';
 import { FiMail, FiCalendar, FiBriefcase } from 'react-icons/fi';
 import { FaSitemap } from 'react-icons/fa';
 import { formatDate, getInitials } from './userDetails.utils';
@@ -36,32 +36,32 @@ const ProfileBadge = ({ role }) => (
 
 export const UserProfileCard = ({ user }) => (
   <EnterpriseCard hoverEffect={false} className="relative h-full">
-    {/* Gradient Header with more padding */}
-    <div 
-      className="h-48 w-full bg-gradient-to-r from-indigo-600 to-blue-600"
-      style={{ 
+    {/* Gradient header */}
+    <div
+      className="h-28 w-full"
+      style={{
         background: `linear-gradient(135deg, ${colorPalette.primary.dark} 0%, ${colorPalette.primary.light} 100%)`
       }}
     ></div>
-    
+
     {user?.role && <ProfileBadge role={user.role} />}
-    
-    <div className="px-8 pb-10 pt-2 relative"> {/* Increased padding */}
-      {/* Profile Image with more margin */}
-      <div className="flex justify-center -mt-20 mb-6"> {/* Increased negative margin and bottom margin */}
+
+    <div className="px-6 pb-8 pt-2 relative">
+      {/* Profile image */}
+      <div className="flex justify-center -mt-16 mb-5">
         <div className="relative">
           {user?.imageurl ? (
             <img 
               src={userImg} 
               alt={user.name || "User"} 
-              className="w-36 h-36 rounded-full border-4 border-white object-cover shadow-xl" 
+              className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-xl" 
             />
           ) : (
             <div 
-              className="w-36 h-36 rounded-full border-4 border-white flex items-center justify-center shadow-xl"
+              className="w-28 h-28 rounded-full border-4 border-white flex items-center justify-center shadow-xl"
               style={{ backgroundColor: colorPalette.primary.dark }}
             >
-              <span className="text-5xl font-bold text-white"> {/* Larger initials */}
+              <span className="text-3xl font-bold text-white"> {/* Larger initials */}
                 {getInitials(user?.name)}
               </span>
             </div>
@@ -69,31 +69,30 @@ export const UserProfileCard = ({ user }) => (
         </div>
       </div>
       
-      {/* User Info with more spacing */}
-      <div className="text-center space-y-3 mb-8"> {/* Added bottom margin */}
-        <h2 className={`${typography.h2} text-gray-900`}>
+      {/* User name */}
+      <div className="text-center mb-5">
+        <h2 className="text-xl font-bold text-gray-900">
           {user?.name || "Unknown User"}
         </h2>
-        {/*<p className="text-gray-500 text-lg">{user?.position || "No position specified"}</p> {/* Larger text */}
       </div>
-      
-      {/* Details with more spacing */}
-      <div className="space-y-4"> {/* Increased spacing between items */}
-        <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors"> {/* Larger padding */}
-          <FiMail className="text-gray-500 text-xl flex-shrink-0" /> {/* Larger icon */}
-          <span className="text-gray-700 text-lg truncate">{user?.email || "No email provided"}</span> {/* Larger text */}
+
+      {/* Details */}
+      <div className="space-y-1.5">
+        <div className="flex items-center space-x-3 p-2.5 hover:bg-gray-50 rounded-lg transition-colors"> {/* Larger padding */}
+          <FiMail className="text-gray-500 text-base flex-shrink-0" /> {/* Larger icon */}
+          <span className="text-gray-700 text-sm truncate">{user?.email || "No email provided"}</span> {/* Larger text */}
         </div>
         
         {user?.Department && (
-          <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-            <FaSitemap className="text-gray-500 text-xl flex-shrink-0" />
-            <span className="text-gray-700 text-lg">{user.Department}</span>
+          <div className="flex items-center space-x-3 p-2.5 hover:bg-gray-50 rounded-lg transition-colors">
+            <FaSitemap className="text-gray-500 text-base flex-shrink-0" />
+            <span className="text-gray-700 text-sm">{user.Department}</span>
           </div>
         )}
       
         {user?.WorkStatus && (
-          <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-            <FiBriefcase className="text-gray-500 text-xl flex-shrink-0" />
+          <div className="flex items-center space-x-3 p-2.5 hover:bg-gray-50 rounded-lg transition-colors">
+            <FiBriefcase className="text-gray-500 text-base flex-shrink-0" />
             <div className="flex flex-col gap-0.5">
               <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Work Status</span>
               <WorkStatusBadge status={user.WorkStatus} />
@@ -102,9 +101,9 @@ export const UserProfileCard = ({ user }) => (
         )}
         
         {user?.createdAt && (
-          <div className="flex items-center space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-            <FiCalendar className="text-gray-500 text-xl flex-shrink-0" />
-            <span className="text-gray-700 text-lg">
+          <div className="flex items-center space-x-3 p-2.5 hover:bg-gray-50 rounded-lg transition-colors">
+            <FiCalendar className="text-gray-500 text-base flex-shrink-0" />
+            <span className="text-gray-700 text-sm">
               Member since: {formatDate(user.createdAt.split("T")[0])}
             </span>
           </div>

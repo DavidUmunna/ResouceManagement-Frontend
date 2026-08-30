@@ -25,13 +25,13 @@ const Hero = () => {
             transition={{ duration: 0.7, ease: "easeOut" }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wide uppercase">
               Enterprise Resource Management
             </span>
 
             <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
               Simplify Your{" "}
-              <span className="text-indigo-600">Resource Management</span>
+              <span className="text-blue-600">Resource Management</span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
@@ -42,9 +42,9 @@ const Hero = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <motion.button
                 onClick={() => navigate("/companydata")}
-                className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg
-                          hover:bg-indigo-700 transition-colors duration-300
-                          focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg
+                          hover:bg-blue-700 transition-colors duration-300
+                          focus:outline-none focus:ring-4 focus:ring-blue-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -65,7 +65,7 @@ const Hero = () => {
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-sm text-gray-600">
               {["No credit card required", "Secure & role-based access", "Set up in minutes"].map((item) => (
                 <span key={item} className="inline-flex items-center gap-2">
-                  <FaCheckCircle className="text-indigo-500" />
+                  <FaCheckCircle className="text-blue-500" />
                   {item}
                 </span>
               ))}
@@ -89,7 +89,7 @@ const Hero = () => {
               
               {/* Optional: Add a decorative element */}
               <motion.div
-                className="absolute -bottom-6 -left-6 w-24 h-24 bg-indigo-100 rounded-2xl -z-10"
+                className="absolute -bottom-6 -left-6 w-24 h-24 bg-blue-100 rounded-2xl -z-10"
                 initial={{ scale: 0, rotate: -45 }}
                 whileInView={{ scale: 1, rotate: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}

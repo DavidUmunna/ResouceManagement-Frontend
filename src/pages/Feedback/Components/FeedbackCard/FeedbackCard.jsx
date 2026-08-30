@@ -54,17 +54,17 @@ export const FeedbackCard = ({ feedback, onStatusUpdate, onDelete, canManage = f
         </div>
         
         <div className="flex flex-wrap gap-2 mb-3 text-sm">
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
             {feedback.type}
           </span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
             {feedback.email}
           </span>
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
             {formatDate(feedback.createdAt)}
           </span>
           {feedback.priority && (
-            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg">
               Priority: {feedback.priority}/5
             </span>
           )}
@@ -82,7 +82,7 @@ export const FeedbackCard = ({ feedback, onStatusUpdate, onDelete, canManage = f
             <select
               value={feedback.status}
               onChange={(e) => onStatusUpdate(feedback.id, e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               {Object.values(FeedbackStatus).map(status => (
                 <option key={status} value={status}>

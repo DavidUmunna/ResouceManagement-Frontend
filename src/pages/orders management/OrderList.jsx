@@ -590,8 +590,8 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
         icon = <FaCheck className="mr-1" />;
         break;
       case "More Information":
-        bgColor = "bg-amber-100";       
-        textColor = "text-amber-800";   
+        bgColor = "bg-yellow-100";       
+        textColor = "text-yellow-800";   
         icon = <FaInfoCircle className="mr-1" />;  
         break;
       case "Remove Action":  
@@ -887,7 +887,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                     id={`order-${order._id}`}
-                    className={`relative p-4 border border-gray-200 bg-white rounded-md cursor-pointer transition hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md hover:z-10`}
+                    className={`relative p-4 border border-gray-200 bg-white rounded-lg cursor-pointer transition hover:border-blue-500 hover:bg-blue-50/40 hover:shadow-md hover:z-10`}
                   >
                     <div 
                       className="p-4 sm:p-6 cursor-pointe"
@@ -1017,7 +1017,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200"
+                                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-200"
                                   >
                                     <div className="py-1">
                                       {user.canApprove && (<>
@@ -1066,7 +1066,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                                 <FaCheck className="text-blue-500" />
                                               )}
                                               {(statusOption === "Awaiting Funding" && accRoles?.includes(user?.Department)) && (
-                                                <FaMoneyBillWave className="text-amber-600" />
+                                                <FaMoneyBillWave className="text-yellow-600" />
                                               )}
 
                                             </span>
@@ -1343,7 +1343,7 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                 <a
                   href={`https://outlook.office.com/mail/deeplink/compose?subject=${encodeURIComponent('Purchase Order')}&body=${encodeURIComponent(`View the purchase order:\n${shareData.url}`)}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition"
+                  className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition"
                 >
                   Outlook
                 </a>

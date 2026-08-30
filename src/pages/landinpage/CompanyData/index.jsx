@@ -112,7 +112,7 @@ const CompanyDataForm = () => {
             value={formData.CompanyName}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -126,7 +126,7 @@ const CompanyDataForm = () => {
             name="OrganizationStructure"
             value={formData.OrganizationStructure}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select a structure</option>
             {structureOptions.map((option, index) => (
@@ -146,14 +146,14 @@ const CompanyDataForm = () => {
                 type="text"
                 value={resource.ResourceName}
                 onChange={(e) => handleResourceChange(index, e)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Resource name"
               />
               {formData.ResourcesToStreamline.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeResource(index)}
-                  className="ml-2 px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="ml-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   Remove
                 </button>
@@ -163,7 +163,7 @@ const CompanyDataForm = () => {
           <button
             type="button"
             onClick={addResource}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Add Resource
           </button>
@@ -181,7 +181,7 @@ const CompanyDataForm = () => {
             onChange={handleChange}
             required
             rows="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           ></textarea>
         </div>
 
@@ -189,7 +189,7 @@ const CompanyDataForm = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2 bg-green-500 text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="px-6 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             Submit
           </button>

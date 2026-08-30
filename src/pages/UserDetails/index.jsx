@@ -9,6 +9,7 @@ import { BarChart2, FileText, Timer } from 'lucide-react';
 import { FiChevronUp, FiChevronDown } from 'react-icons/fi';
 import RequestBarChart from './RequestsAnalytics/RequestBarchart';
 import { ScheduleList } from '../SchedulingComponents/ScheduleList';
+import FollowUpPanels from '../Dash/FollowUpPanels';
 
 const UserDetails = ({
     user,
@@ -49,17 +50,17 @@ const UserDetails = ({
             <div className="flex flex-col lg:flex-row gap-6">
 
                 <div className="w-full lg:w-2/3 lg:pr-2">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <UserProfileCard user={user} />
 
                         <div className="lg:col-span-2 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <EnterpriseCard>
                                     <div className="p-6 text-center">
                                         <div className="flex justify-center">
                                             <FileText className="h-12 w-12 text-blue-600" />
                                         </div>
-                                        <h3 className="mt-3 text-lg font-medium text-gray-700">Monthly Requests</h3>
+                                        <h3 className="mt-3 text-lg font-semibold text-gray-700">Monthly Requests</h3>
                                         <p className="text-3xl font-bold text-blue-600 mt-2">{request_amount}</p>
                                     </div>
                                 </EnterpriseCard>
@@ -71,7 +72,7 @@ const UserDetails = ({
                                                 <div className="flex justify-center">
                                                     <BarChart2 className="h-12 w-12 text-green-600" />
                                                 </div>
-                                                <h3 className="mt-3 text-lg font-medium text-gray-700">Approval Rate</h3>
+                                                <h3 className="mt-3 text-lg font-semibold text-gray-700">Approval Rate</h3>
                                                 <p className="text-3xl font-bold text-green-600 mt-2">{stats.approvalRate}%</p>
                                             </div>
                                         </EnterpriseCard>
@@ -80,7 +81,7 @@ const UserDetails = ({
                                                 <div className="flex justify-center">
                                                     <Timer className="h-12 w-12 text-purple-600" />
                                                 </div>
-                                                <h3 className="mt-3 text-lg font-medium text-gray-700">Avg. Processing</h3>
+                                                <h3 className="mt-3 text-lg font-semibold text-gray-700">Avg. Processing</h3>
                                                 <p className="text-3xl font-bold text-purple-600 mt-2">
                                                     {stats.avgProcessingTime} {stats.avgProcessingTime === 1 ? 'day' : 'days'}
                                                 </p>
@@ -102,7 +103,7 @@ const UserDetails = ({
                                         <div key={type} className="mb-6 last:mb-0">
                                             <motion.button
                                                 whileTap={{ scale: 0.98 }}
-                                                className={`w-full rounded-xl p-4 shadow-sm flex justify-between items-center ${
+                                                className={`w-full rounded-xl p-4 flex justify-between items-center ${
                                                     type === 'approved'        ? 'bg-green-50'  :
                                                     type === 'pending'         ? 'bg-yellow-50' :
                                                     type === 'completed' ? 'bg-blue-50' : 'bg-red-50'
@@ -127,6 +128,11 @@ const UserDetails = ({
                 <div className="w-full lg:w-1/3 lg:pl-2 mb-10">
                     <RequestBarChart DepartmentalAccess={DepartmentalAcess} GeneralAccess={GeneralAccess} />
                     {protectedUsers.includes(String(user.userId)) && <ScheduleList />}
+                    {/* Request follow-ups bar (compact; "View" opens a modal). Sits
+                        under the MD-review card — visible for both requesters and approvers. */}
+                    <div className="mt-6">
+                        <FollowUpPanels />
+                    </div>
                 </div>
             </div>
         </div>

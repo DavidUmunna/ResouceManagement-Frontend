@@ -28,6 +28,8 @@ import POAnalyticsPage     from "./pages/POAnalytics";
 const DepartmentAssignment = React.lazy(() => import("./pages/Department_assignment"));
 const InventoryManagement  = React.lazy(() => import("./pages/inventorymanagement/ParentComp"));
 const SkipsManagement      = React.lazy(() => import("./pages/skips/parent"));
+const SkipTrackingModule   = React.lazy(() => import("./pages/skips/module/SkipTrackingModule"));
+const SkipInsightsPage     = React.lazy(() => import("./pages/skips/SkipInsights"));
 const Monitoring           = React.lazy(() => import("./pages/Monitoring"));
 const AssetsManagement     = React.lazy(() => import("./pages/AssetManagement/Assetmanagement"));
 const ScheduleManager      = React.lazy(() => import("./pages/SchedulingComponents/ScheduleManager"));
@@ -138,6 +140,8 @@ export default function ProtectedLayout({ isauthenticated, setisauthenticated })
           <Route path="ai-tools"             element={<Guard route="ai-tools"><AiToolsPage /></Guard>} />
           <Route path="departmentassignment" element={<Guard route="departmentassignment"><DepartmentAssignment setAuth={setisauthenticated} /></Guard>} />
           <Route path="skipstracking"        element={<Guard route="skipstracking"><SkipsManagement /></Guard>} />
+          <Route path="skip-tracking"        element={<Guard route="skipstracking"><SkipTrackingModule /></Guard>} />
+          <Route path="skip-insights"        element={<Guard route="skipstracking"><div className="max-w-full mx-auto px-2 sm:px-6 py-6 mb-20 pt-6"><SkipInsightsPage /></div></Guard>} />
           <Route path="monitoring"           element={<Guard route="monitoring"><Monitoring /></Guard>} />
 
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />

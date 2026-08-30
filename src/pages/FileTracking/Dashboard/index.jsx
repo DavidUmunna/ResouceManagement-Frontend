@@ -78,7 +78,7 @@ const FileTrackingDashboard = ({ serviceInstance }) => {
       </div>
 
       {error && (
-        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -86,7 +86,7 @@ const FileTrackingDashboard = ({ serviceInstance }) => {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatCard label="Total files" value={summary.total} icon={<FiFileText className="text-blue-600" />} />
         <StatCard label="Active" value={summary.active} icon={<FiActivity className="text-green-600" />} />
-        <StatCard label="Expiring soon" value={summary.expiringSoon} icon={<FiClock className="text-amber-500" />} />
+        <StatCard label="Expiring soon" value={summary.expiringSoon} icon={<FiClock className="text-yellow-500" />} />
         <StatCard label="Expired" value={summary.expired} icon={<FiAlertTriangle className="text-red-500" />} />
       </div>
 

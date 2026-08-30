@@ -4,7 +4,7 @@ import {
   ChevronDown, Package, Users, Wrench, Settings2,
 } from 'lucide-react';
 import { AiOutlineWarning } from 'react-icons/ai';
-import { FiFileText } from 'react-icons/fi';
+import { FiFileText, FiTruck } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { forwardRef, useState } from 'react';
 import { useUser } from './usercontext';
@@ -38,6 +38,8 @@ const NAV_GROUPS = [
     icon: Wrench,
     items: [
       { name: 'Skips Tracking',        to: '/admin/skipstracking',       icon: FiFileText,      visibleTo: R.skipstracking },
+      { name: 'Skip Insights',         to: '/admin/skip-insights',       icon: TrendingUp,      visibleTo: R.skipstracking },
+      { name: 'Skip Tracking (RFID)',  to: '/admin/skip-tracking',       icon: FiTruck,         visibleTo: R.skipstracking },
       { name: 'File Tracking',         to: '/admin/filetracking',        icon: FileSearch,      visibleTo: R.filetracking },
     ],
   },
@@ -84,7 +86,7 @@ const Sidebar = forwardRef(({ isOpen, onClose }, ref) => {
             <div key={group.label}>
               <button
                 onClick={() => toggle(group.label)}
-                className="w-full flex items-center justify-between px-2 py-2.5 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-150"
+                className="w-full flex items-center justify-between px-2 py-2.5 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-150"
               >
                 <span className="flex items-center gap-3">
                   <GroupIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -106,7 +108,7 @@ const Sidebar = forwardRef(({ isOpen, onClose }, ref) => {
                       to={item.to}
                       key={item.name}
                       onClick={onClose}
-                      className="flex items-center gap-3 px-2 py-2 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white transition-colors duration-150"
+                      className="flex items-center gap-3 px-2 py-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors duration-150"
                     >
                       <item.icon className="w-4 h-4 flex-shrink-0" />
                       <span className="text-sm">{item.name}</span>

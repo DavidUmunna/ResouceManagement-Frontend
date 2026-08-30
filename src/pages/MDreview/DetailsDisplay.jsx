@@ -6,8 +6,8 @@ const DetailsDisplay=({Schedule})=>{
 
     
     return(
-         <div className='flex justify-center border-2 rounded-md overflow-x-auto'>
-                  <table className='min-w-full divide-y divide-gray-200 border-2 rounded-md'>
+         <div className='flex justify-center border-2 rounded-lg overflow-x-auto'>
+                  <table className='min-w-full divide-y divide-gray-200 border-2 rounded-lg'>
         
                   <thead className='bg-gray-50'>
                     <tr className="px-6 py-4 ">

@@ -1,8 +1,8 @@
 export const colorPalette = {
   primary: {
-    light: '#4f46e5',
-    main: '#4338ca',
-    dark: '#3730a3'
+    light: '#3b82f6', // blue-500
+    main: '#2563eb',  // blue-600
+    dark: '#1d4ed8'   // blue-700
   },
   secondary: {
     light: '#f97316',

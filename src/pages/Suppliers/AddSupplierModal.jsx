@@ -121,7 +121,7 @@ export default function AddSupplierModal({ onClose }) {
                 value={form.name}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 placeholder="Vendor name"
               />
             </div>
@@ -135,7 +135,7 @@ export default function AddSupplierModal({ onClose }) {
                 value={form.email}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 placeholder="vendor@example.com"
               />
             </div>
@@ -149,7 +149,7 @@ export default function AddSupplierModal({ onClose }) {
                 value={form.phone}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 placeholder="+1234567890"
               />
             </div>
@@ -162,7 +162,7 @@ export default function AddSupplierModal({ onClose }) {
                 value={form.address}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 placeholder="Vendor address"
               />
             </div>
@@ -175,7 +175,7 @@ export default function AddSupplierModal({ onClose }) {
                 onChange={handleChange}
                 disabled={loading}
                 rows={3}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 placeholder="Describe what this vendor provides"
               />
             </div>
@@ -187,7 +187,7 @@ export default function AddSupplierModal({ onClose }) {
                 value={form.status}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -199,14 +199,14 @@ export default function AddSupplierModal({ onClose }) {
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md transition-colors disabled:opacity-50"
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <motion.button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                 whileHover={{ scale: loading ? 1 : 1.02 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
               >

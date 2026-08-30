@@ -15,6 +15,8 @@ const navigation = [
   { name: 'Users', to: '/admin/users', icon: UsersIcon, visibleTo: [ 'global_admin'] },
   { name:'Tasks', to:'/admin/usertasks', icon: ClipboardDocumentCheckIcon, hiddenFor:['Visitor']},
   { name: "Skips Tracking", to: "/admin/skipstracking", icon: FiFileText,visibleTo:["Visitor"] },
+  { name: "Skip Insights", to: "/admin/skip-insights", icon: FiFileText,visibleTo:["Visitor"] },
+  { name: "Skip Tracking (RFID)", to: "/admin/skip-tracking", icon: FiFileText,visibleTo:["Visitor"] },
   {name:'Schedule Manager', to:'/admin/schedulemanager', icon: CalendarClock ,visibleTo:['Accountant',"Financial_manager"] },
   
 ];
@@ -136,7 +138,7 @@ export default function Navbar() {
                             isActive(item.to)
                               ? 'bg-gray-900 text-white'
                               : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                            'rounded-md px-2 py-1 text-sm font-medium flex items-center gap-1'
+                            'rounded-lg px-2 py-1 text-sm font-medium flex items-center gap-1'
                           )}
                         >
                           <item.icon className="h-5 w-5" />
@@ -173,7 +175,7 @@ export default function Navbar() {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                       >
-                        <Menu.Items className="absolute top-4 right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Menu.Items className="absolute top-4 right-0 z-20 mt-2 w-48 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           {userNavigation.map((item) => (
                             <Menu.Item key={item.name}>
                               {({ active }) => (
@@ -197,7 +199,7 @@ export default function Navbar() {
 
                 {/* Mobile menu button */}
                 <div className="-mr-2 flex md:hidden">
-                  <Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none">
+                  <Disclosure.Button className="inline-flex items-center justify-center rounded-lg bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none">
                     <span className="sr-only">Open main menu</span>
                     {open ? (
                       <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
@@ -221,7 +223,7 @@ export default function Navbar() {
                       isActive(item.to)
                         ? 'bg-gray-900 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                      'block rounded-md px-3 py-2 text-base font-medium flex items-center gap-2'
+                      'block rounded-lg px-3 py-2 text-base font-medium flex items-center gap-2'
                     )}
                   >
                     
@@ -247,7 +249,7 @@ export default function Navbar() {
                     
                     key={item.name}
                     to={item.to}
-                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                    className="block rounded-lg px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
                     >
                       {item.name}
                     </Disclosure.Button>

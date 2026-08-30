@@ -21,12 +21,12 @@ const DEPARTMENTS = [
 const DEPT_COLORS = {
   waste_management_dep:  'bg-green-100 text-green-800',
   PVT:                   'bg-blue-100 text-blue-800',
-  Environmental_lab_dep: 'bg-teal-100 text-teal-800',
+  Environmental_lab_dep: 'bg-green-100 text-green-800',
   accounts_dep:          'bg-yellow-100 text-yellow-800',
   'Human resources':     'bg-pink-100 text-pink-800',
-  IT:                    'bg-indigo-100 text-indigo-800',
+  IT:                    'bg-blue-100 text-blue-800',
   Administration:        'bg-purple-100 text-purple-800',
-  Business_Develoment:   'bg-orange-100 text-orange-800',
+  Business_Develoment:   'bg-yellow-100 text-yellow-800',
 };
 
 const STATUS_STYLES = {

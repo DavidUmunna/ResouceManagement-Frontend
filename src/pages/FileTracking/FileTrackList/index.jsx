@@ -300,7 +300,7 @@ const handleUpdate = async (e) => {
                 <select
                   value={pagination?.limit || 10}
                   onChange={(e) => onItemsPerPageChange && onItemsPerPageChange(Number(e.target.value))}
-                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
                 >
                   {[5, 10, 20, 50].map((size) => (
                     <option key={size} value={size}>{size}</option>
@@ -313,7 +313,7 @@ const handleUpdate = async (e) => {
                   type="button"
                   onClick={() => onPageChange && onPageChange(Math.max((pagination?.page || 1) - 1, 1))}
                   disabled={!pagination?.page || pagination?.page <= 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -327,7 +327,7 @@ const handleUpdate = async (e) => {
                     !pagination?.page ||
                     (pagination?.page || 1) >= Math.ceil((pagination?.total || filteredItems.length) / (pagination?.limit || 10))
                   }
-                  className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
                   Next
                 </button>

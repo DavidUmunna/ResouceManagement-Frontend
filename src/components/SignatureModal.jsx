@@ -43,7 +43,7 @@ export default function SignatureModal({ isOpen, onClose, onSave }) {
           canvasProps={{
             width: 350,
             height: 150,
-            className: "border border-gray-400 rounded-md"
+            className: "border border-gray-400 rounded-lg"
           }}
         />
 
@@ -73,7 +73,7 @@ export default function SignatureModal({ isOpen, onClose, onSave }) {
         {trimmedDataURL && (
           <div className="mt-4">
             <p className="text-sm font-medium">Preview:</p>
-            <img src={trimmedDataURL} alt="signature preview" className="border rounded-md mt-2" />
+            <img src={trimmedDataURL} alt="signature preview" className="border rounded-lg mt-2" />
           </div>
         )}
       </div>

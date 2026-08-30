@@ -108,7 +108,7 @@ export default function Sign_in({ setAuth }) {
                    Username
                  </label>
                  <div className="text-sm">
-                     <Link to="/" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                     <Link to="/" className="font-semibold text-blue-600 hover:text-blue-500">
                         Home
                      </Link>
                    </div>
@@ -121,7 +121,7 @@ export default function Sign_in({ setAuth }) {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                  className="block w-full rounded-lg bg-white px-3 py-2 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                   />
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function Sign_in({ setAuth }) {
                   Password
                 </label>
                 <div className="text-sm">
-                  <Link to="/forgotpassword" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                  <Link to="/forgotpassword" className="font-semibold text-blue-600 hover:text-blue-500">
                     Forgot password?
                   </Link>
                 </div>
@@ -146,7 +146,7 @@ export default function Sign_in({ setAuth }) {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full rounded-md bg-white px-3 py-2 pr-10 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                    className="block w-full rounded-lg bg-white px-3 py-2 pr-10 text-base text-gray-900 outline-none border border-gray-300 placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                   />
                   <button
                     type="button"
@@ -165,7 +165,7 @@ export default function Sign_in({ setAuth }) {
                 type="submit"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex w-full justify-center rounded-md bg-black px-3 py-2 text-sm font-semibold text-white shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                className="flex w-full justify-center rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white shadow-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </motion.button>

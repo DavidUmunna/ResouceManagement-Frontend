@@ -76,7 +76,7 @@ export const ScheduleForm = ({ initialData, onSubmit, isSubmitting }) => {
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({...formData, name: e.target.value})}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           required
         />
       </div>
@@ -91,7 +91,7 @@ export const ScheduleForm = ({ initialData, onSubmit, isSubmitting }) => {
            
            
             setFormData({...formData, AccountsComment: e.target.value})}}
-          className="w-full h-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="w-full h-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           
         />
       </div>
@@ -137,12 +137,12 @@ export const ScheduleForm = ({ initialData, onSubmit, isSubmitting }) => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
         >
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </button>
 
-        <div className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+        <div className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
             <Link
             to={"/admin/schedulemanager"}
             >
