@@ -35,7 +35,7 @@ const ProfileBadge = ({ role }) => (
 );
 
 export const UserProfileCard = ({ user }) => (
-  <EnterpriseCard hoverEffect={false} className="relative h-full">
+  <EnterpriseCard hoverEffect={false} className="relative self-start">
     {/* Gradient header */}
     <div
       className="h-28 w-full"

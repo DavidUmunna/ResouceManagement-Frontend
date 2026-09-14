@@ -26,6 +26,12 @@ export const OrderList = ({ orders, isExpanded }) => (
               <div>
                 <p className="font-medium text-gray-800">#{req.orderNumber}</p>
                 <p className="text-sm text-gray-600">{req.Title}</p>
+                {req.staff?.name && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    By {req.staff.name}
+                    {req.staff.Department ? ` · ${req.staff.Department}` : ""}
+                  </p>
+                )}
               </div>
               <span className="text-right">
                 <span className="block text-xs text-gray-500">{formatDate(req.createdAt)}</span>
