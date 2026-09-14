@@ -423,6 +423,29 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
     setDeleteModalOpen(true);
   }
 
+  // Mirror the backend DELETE /orders/:id authorisation exactly:
+  //  • global_admin           → any order
+  //  • manager (DeletionRoles) → only orders from their own department
+  //  • owner                   → only their own order while still Pending
+  const canDeleteOrder = (order) => {
+    if (!user) return false;
+    if (user.role === "global_admin") return true;
+
+    const isManager = (DeletionRoles || []).includes(user.role);
+    if (isManager) {
+      const orderDept = order.staff?.Department || order.targetDepartment;
+      return orderDept === user.Department;
+    }
+
+    // Owner-only, and only while Pending
+    const meId    = String(user?.userId || user?._id || user?.id || '');
+    const staffId = order.staff?._id ? String(order.staff._id) : String(order.staff ?? '');
+    const emailMatch = !!(user?.email && order.staff?.email && order.staff.email.toLowerCase() === user.email.toLowerCase());
+    const idMatch    = !!(meId && staffId && meId === staffId);
+    const isOwner    = emailMatch || idMatch;
+    return isOwner && order.status === "Pending";
+  };
+
   const handleShare = async (e, order) => {
     e.stopPropagation();
     try {
@@ -1084,11 +1107,11 @@ const OrderList = ({orders,setOrders, selectedOrderId,setSelectedOrderId ,error,
                                              }
                                           </div>
                                         ))}
-                                      {DeletionRoles.includes(user.role)&&(<button
+                                      {canDeleteOrder(order)&&(<button
                                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          
+
                                           handleDeleteClick(order._id);
                                         }}
                                       >

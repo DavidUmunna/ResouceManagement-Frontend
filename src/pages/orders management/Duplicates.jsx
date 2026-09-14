@@ -1,17 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaFlag, FaTimes, FaCopy } from 'react-icons/fa';
+import { FaFlag, FaTimes, FaCopy, FaTrash } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Pagination from '../../components/Pagination';
+import { useUser } from '../../components/usercontext';
+import { toast } from 'react-toastify';
+import { DeleteConfirmationModal } from '../../components/DeleteConfirmationModal';
 
 const GROUPS_PER_PAGE = 5;
 
 const Duplicates = ({ onOrderSelect }) => {
+  const { user } = useUser();
+  const isAdmin = user?.role === 'global_admin';
   const [duplicateGroups, setDuplicateGroups] = useState([]);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  // Global admins can prune an individual duplicate straight from this panel.
+  // The trash button opens the shared DeleteConfirmationModal; feedback via toast.
+  // Backend authorises this via DELETE /orders/:id (global_admin → any order).
+  const confirmDeleteDuplicate = async (orderId) => {
+    setDeletingId(orderId);
+    try {
+      const API_URL = `${process.env.REACT_APP_API_URL}/api`;
+      await axios.delete(`${API_URL}/orders/${orderId}`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' },
+        withCredentials: true,
+      });
+      // Drop the order from its group; a group with <2 items is no longer a duplicate.
+      setDuplicateGroups((prev) =>
+        prev.map((g) => g.filter((o) => o._id !== orderId)).filter((g) => g.length > 1)
+      );
+      toast.success('Duplicate request deleted.');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to delete request.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   // Detection runs server-side over all orders the user can see (not just the
   // current page), with proper transitive grouping.
@@ -181,13 +211,25 @@ const Duplicates = ({ onOrderSelect }) => {
                                   {order.orderedBy} • {new Date(order.createdAt).toLocaleDateString()}
                                 </p>
                               </div>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                order.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                                order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {order.status}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  order.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {order.status}
+                                </span>
+                                {isAdmin && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setPendingDeleteId(order._id); }}
+                                    disabled={deletingId === order._id}
+                                    title="Delete this duplicate request"
+                                    className="p-1.5 rounded text-red-600 hover:bg-red-100 disabled:opacity-50"
+                                  >
+                                    <FaTrash className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
                             {order.remarks && (
@@ -228,6 +270,14 @@ const Duplicates = ({ onOrderSelect }) => {
           />
         </div>
       )}
+
+      {/* Shared confirmation modal (global-admin duplicate deletion) */}
+      <DeleteConfirmationModal
+        isOpen={!!pendingDeleteId}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={confirmDeleteDuplicate}
+        orderId={pendingDeleteId}
+      />
     </div>
   );
 };
