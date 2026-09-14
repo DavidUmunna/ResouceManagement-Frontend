@@ -100,10 +100,10 @@ const UserDetails = ({
                                         { type: 'completed',       orders: completedOrders },
                                         { type: 'rejected',        orders: rejectedOrders },
                                     ].map(({ type, orders }) => (
-                                        <div key={type} className="mb-6 last:mb-0">
+                                        <div key={type} className="mb-3 last:mb-0">
                                             <motion.button
                                                 whileTap={{ scale: 0.98 }}
-                                                className={`w-full rounded-xl p-4 flex justify-between items-center ${
+                                                className={`w-full rounded-xl px-4 py-2.5 flex justify-between items-center ${
                                                     type === 'approved'        ? 'bg-green-50'  :
                                                     type === 'pending'         ? 'bg-yellow-50' :
                                                     type === 'completed' ? 'bg-blue-50' : 'bg-red-50'

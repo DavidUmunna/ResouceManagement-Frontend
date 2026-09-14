@@ -24,6 +24,11 @@ export const ScheduleList = () => {
     console.log('MD review completed');
   };
 
+  // Don't render the card at all unless there's actually a schedule to review
+  // (also stays hidden while the query is still loading).
+  const hasSchedules = Array.isArray(schedules) && schedules.length > 0;
+  if (isLoading || !hasSchedules) return null;
+
   return (
     <div className="p-6 bg-white border border-gray-200 rounded-xl mt-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Schedules Awaiting MD Review</h2>
