@@ -7,6 +7,11 @@ Sentry.init({
   tracesSampleRate: 1.0,
   environment: "production",
 
+  // Route events through our own API instead of straight to Sentry's ingest host.
+  // Same-domain requests dodge ad-blockers / CSP / ingest-CORS that were dropping
+  // events in production. The backend forwards the raw envelope to Sentry.
+  tunnel: `${process.env.REACT_APP_API_URL}/api/monitoring/sentry-tunnel`,
+
   beforeSend(event, hint) {
   const error = hint.originalException;
 
