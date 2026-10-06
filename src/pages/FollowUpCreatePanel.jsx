@@ -24,10 +24,11 @@ export default function FollowUpCreatePanel({ user }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API()}/orders/StaffRequests`, { params: { userId: user?.userId }, withCredentials: true });
+      // Ask the server for ALL of the user's eligible requests (Pending/Approved),
+      // regardless of age — `statuses` bypasses StaffRequests' monthly date window.
+      const res = await axios.get(`${API()}/orders/StaffRequests`, { params: { userId: user?.userId, statuses: "Pending,Approved" }, withCredentials: true });
       const all = Array.isArray(res.data?.data) ? res.data.data : [];
-      // Own, still-eligible requests: Pending (incl. partially-approved) or Approved
-      // (to chase fulfilment). Terminal + "More Information" excluded; backend re-checks.
+      // Safety net (backend already filtered): keep only Pending / Approved.
       setRequests(all.filter((o) => o.status === "Pending" || o.status === "Approved"));
     } catch (e) {
       setMsg({ type: "err", text: followupError(e, "Couldn't load your requests") });
