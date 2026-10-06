@@ -13,6 +13,10 @@ export const getReceivedFollowups = () => axios.get(`${API()}/orders/followups/r
 // "awaiting your action" audience as received follow-ups.
 export const getEscalatedReceived = () => axios.get(`${API()}/orders/followups/escalated`, cfg).then((r) => r.data?.data || []);
 
+// Follow-ups on requests the current user approved (now Approved). Informational
+// only — shown as read-only FYI rows, no approve/reject.
+export const getApprovedReceived = () => axios.get(`${API()}/orders/followups/received-approved`, cfg).then((r) => r.data?.data || []);
+
 // All follow-ups on a specific request (activity timeline).
 export const getFollowupsForOrder = (orderId) => axios.get(`${API()}/orders/${orderId}/followups`, cfg).then((r) => r.data?.data || []);
 

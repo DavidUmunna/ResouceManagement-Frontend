@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiBell, FiX } from "react-icons/fi";
 import { useUser } from "../../components/usercontext";
-import { getSentFollowups, getReceivedFollowups, getEscalatedReceived } from "../../services/followupService";
+import { getSentFollowups, getReceivedFollowups, getEscalatedReceived, getApprovedReceived } from "../../services/followupService";
 import { updateOrderStatus } from "../../services/OrderService";
 import ReviewVerification from "../../components/ReviewVerification";
 import Button from "../../components/Button";
@@ -26,18 +26,20 @@ export default function FollowUpPanels() {
   const [sent, setSent] = useState([]);
   const [received, setReceived] = useState([]);
   const [escalated, setEscalated] = useState([]);
+  const [approvedReceived, setApprovedReceived] = useState([]);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("received");
   const [busyId, setBusyId] = useState(null);
   const [rejectFor, setRejectFor] = useState(null);
 
   const load = useCallback(async () => {
-    const [s, r, e] = await Promise.all([
+    const [s, r, e, a] = await Promise.all([
       getSentFollowups().catch(() => []),
       getReceivedFollowups().catch(() => []),
       getEscalatedReceived().catch(() => []),
+      getApprovedReceived().catch(() => []),
     ]);
-    setSent(s); setReceived(r); setEscalated(e);
+    setSent(s); setReceived(r); setEscalated(e); setApprovedReceived(a);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -56,8 +58,17 @@ export default function FollowUpPanels() {
       if (existing) { existing.escalated = true; existing.escalatedAt = e.escalatedAt; }
       else byOrder.set(id, { key: id, order: e.order, followup: null, escalated: true, escalatedAt: e.escalatedAt });
     });
+    // Approved-request follow-ups: informational only (distinct orders — a request
+    // can't be both Pending and Approved), rendered read-only with no approve/reject.
+    approvedReceived.forEach((f) => {
+      if (!f.order?._id) return;
+      byOrder.set(String(f.order._id), { key: String(f.order._id), order: f.order, followup: f, escalated: false, escalatedAt: null, approved: true });
+    });
     return Array.from(byOrder.values());
-  }, [received, escalated]);
+  }, [received, escalated, approvedReceived]);
+
+  const actionableCount = attention.filter((i) => !i.approved).length;
+  const approvedCount = attention.filter((i) => i.approved).length;
 
   const goToRequest = (orderId) => navigate(`/admin/requestlist#order-${orderId}`);
 
@@ -85,8 +96,10 @@ export default function FollowUpPanels() {
           <div className="min-w-0">
             <div className="font-semibold text-gray-800 text-sm">Requests needing attention</div>
             <div className="text-xs text-gray-500 truncate">
-              {attention.length > 0 && <span className="text-red-600 font-medium">{attention.length} awaiting your action</span>}
-              {attention.length > 0 && sent.length > 0 && <span> · </span>}
+              {actionableCount > 0 && <span className="text-red-600 font-medium">{actionableCount} awaiting your action</span>}
+              {actionableCount > 0 && approvedCount > 0 && <span> · </span>}
+              {approvedCount > 0 && <span className="text-green-700">{approvedCount} approved update{approvedCount === 1 ? "" : "s"}</span>}
+              {(actionableCount > 0 || approvedCount > 0) && sent.length > 0 && <span> · </span>}
               {sent.length > 0 && <span>{sent.length} sent</span>}
             </div>
           </div>
@@ -105,7 +118,7 @@ export default function FollowUpPanels() {
 
             {/* Tabs */}
             <div className="flex gap-1 px-5 pt-3">
-              {[["received", `Awaiting you (${attention.length})`], ["sent", `Sent (${sent.length})`]].map(([key, lbl]) => (
+              {[["received", `Received (${attention.length})`], ["sent", `Sent (${sent.length})`]].map(([key, lbl]) => (
                 <button key={key} onClick={() => setTab(key)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === key ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
                   {lbl}
@@ -125,6 +138,9 @@ export default function FollowUpPanels() {
                             {item.escalated && (
                               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">Escalated</span>
                             )}
+                            {item.approved && (
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">Approved</span>
+                            )}
                           </div>
                           <span className="text-xs text-gray-400 shrink-0">{item.order?.orderNumber}</span>
                         </div>
@@ -133,7 +149,12 @@ export default function FollowUpPanels() {
                             ? <>{item.followup.requestedByName || "Requester"} followed up{item.followup.note ? `: “${item.followup.note}”` : ""} <span className="text-gray-400">· {fmt(item.followup.createdAt)}</span></>
                             : <>Escalated by the requester <span className="text-gray-400">· {fmt(item.escalatedAt)}</span></>}
                         </p>
-                        {user?.canApprove && (
+                        {item.approved ? (
+                          // Approved request → informational only, nothing to approve/reject.
+                          <div className="flex gap-2 mt-2 items-center">
+                            <Button size="sm" variant="link" onClick={() => { setOpen(false); goToRequest(item.order._id); }}>Open request →</Button>
+                          </div>
+                        ) : user?.canApprove && (
                           <div className="flex gap-2 mt-2 items-center">
                             <Button size="sm" variant="success" loading={busyId === item.key} onClick={() => decide(item, "approve")}>Approve</Button>
                             <Button size="sm" variant="danger" disabled={busyId === item.key} onClick={() => setRejectFor(item)}>Reject</Button>
