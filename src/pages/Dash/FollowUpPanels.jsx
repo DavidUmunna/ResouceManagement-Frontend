@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FiBell, FiX } from "react-icons/fi";
+import { FiBell, FiX, FiCheckCircle } from "react-icons/fi";
 import { useUser } from "../../components/usercontext";
-import { getSentFollowups, getReceivedFollowups, getEscalatedReceived, getApprovedReceived } from "../../services/followupService";
+import { getSentFollowups, getReceivedFollowups, getEscalatedReceived, getApprovedReceived, resolveFollowup } from "../../services/followupService";
 import { updateOrderStatus } from "../../services/OrderService";
 import ReviewVerification from "../../components/ReviewVerification";
 import Button from "../../components/Button";
@@ -83,6 +83,16 @@ export default function FollowUpPanels() {
     }
   };
 
+  const resolve = async (item) => {
+    setBusyId(item.key);
+    try {
+      await resolveFollowup(item.order._id); // notifies the follow-up sender(s)
+      await load(); // resolved follow-ups drop off the received list
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const openModal = () => { setTab(attention.length ? "received" : "sent"); setOpen(true); };
 
   if (!sent.length && !attention.length) return null; // nothing to show
@@ -151,13 +161,19 @@ export default function FollowUpPanels() {
                         </p>
                         {item.approved ? (
                           // Approved request → informational only, nothing to approve/reject.
-                          <div className="flex gap-2 mt-2 items-center">
+                          <div className="flex gap-2 mt-2 items-center flex-wrap">
+                            {item.followup && (
+                              <Button size="sm" variant="outline" loading={busyId === item.key} onClick={() => resolve(item)}>Mark resolved</Button>
+                            )}
                             <Button size="sm" variant="link" onClick={() => { setOpen(false); goToRequest(item.order._id); }}>Open request →</Button>
                           </div>
                         ) : user?.canApprove && (
-                          <div className="flex gap-2 mt-2 items-center">
+                          <div className="flex gap-2 mt-2 items-center flex-wrap">
                             <Button size="sm" variant="success" loading={busyId === item.key} onClick={() => decide(item, "approve")}>Approve</Button>
                             <Button size="sm" variant="danger" disabled={busyId === item.key} onClick={() => setRejectFor(item)}>Reject</Button>
+                            {item.followup && (
+                              <Button size="sm" variant="outline" disabled={busyId === item.key} onClick={() => resolve(item)}>Mark resolved</Button>
+                            )}
                             <Button size="sm" variant="link" onClick={() => { setOpen(false); goToRequest(item.order._id); }}>Open request →</Button>
                           </div>
                         )}
@@ -177,6 +193,11 @@ export default function FollowUpPanels() {
                           <span className={`text-xs px-2 py-0.5 rounded-full ${f.order?.status === "Pending" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"}`}>{f.order?.status || "—"}</span>
                         </div>
                         <p className="text-sm text-gray-600 mt-1">{f.note ? `“${f.note}”` : "Followed up"} <span className="text-gray-400">· {fmt(f.createdAt)}</span></p>
+                        {f.resolved && (
+                          <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                            <FiCheckCircle /> Resolved{f.resolvedByName ? ` by ${f.resolvedByName}` : ""}{f.resolutionNote ? `: “${f.resolutionNote}”` : ""} <span className="text-gray-400">· {fmt(f.resolvedAt)}</span>
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ul>

@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import * as Sentry from "@sentry/react"
 import { useUser } from '../../components/usercontext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import OrderList from './OrderList';
 import Duplicates from './Duplicates';
 import { get_user_orders } from '../../services/OrderService';
@@ -42,6 +43,8 @@ const OrdersDashboard = ({setAuth}) => {
   const [notificationToast, setNotificationToast] = useState(null);
   const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
   const [mineOnly, setMineOnly] = useState(false); // approver "my requests only" history filter
+  const location = useLocation();
+  const handledHashRef = useRef(""); // which #order-<id> we've already scrolled to
   //const [filteredorders,setfilteredorders]=useState([])
 
   const [Data, setData] = useState({
@@ -77,7 +80,7 @@ const OrdersDashboard = ({setAuth}) => {
         setIsLoading(false)
       }
     }
-  const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={},mineFlag=mineOnly) => {
+  const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={},mineFlag=mineOnly,focusId=null) => {
     setIsLoading(true);
     try {
         const { GENERAL_ACCESS_ORDERS = [], DEPARTMENTAL_ACCESS = [], APPROVALS_LIST=[] } = rbacData;
@@ -90,6 +93,7 @@ const OrdersDashboard = ({setAuth}) => {
               params: {
                 role:user?.role,
                 mine: mineFlag ? "true" : undefined,
+                focus: focusId || undefined,
                 page, limit },
               headers: {
                 
@@ -196,7 +200,11 @@ const OrdersDashboard = ({setAuth}) => {
         setIsLoading(true)
         const rbacData=await rbac_();
         if (rbacData && user) {
-          await fetchData(Data.pagination?.page, Data.pagination?.limit, rbacData);
+          // On a deep-link (/admin/requestlist#order-<id>), ask the server for the
+          // page that contains that order so it's guaranteed to be on screen.
+          const m = /#order-([A-Za-z0-9]+)/.exec(location.hash || "");
+          const focusId = m ? m[1] : null;
+          await fetchData(Data.pagination?.page, Data.pagination?.limit, rbacData, mineOnly, focusId);
         }
       }catch(error){
         setError("An Error Occurred")
@@ -224,6 +232,26 @@ const OrdersDashboard = ({setAuth}) => {
 
     return unsubscribe;
   }, [Data.pagination?.page, Data.pagination?.limit]);
+
+  // Deep-link support: arriving at /admin/requestlist#order-<id> (e.g. from a
+  // follow-up "Open request →") scrolls to that card and briefly highlights it.
+  // Runs after the list loads; retries on each load until the card is in the DOM.
+  useEffect(() => {
+    const m = /#order-([A-Za-z0-9]+)/.exec(location.hash || "");
+    if (!m || showAwaitingApproval) return undefined;
+    const orderId = m[1];
+    if (handledHashRef.current === orderId) return undefined;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`order-${orderId}`);
+      if (!el) return; // not on the loaded page yet — leave unhandled so a later load retries
+      handledHashRef.current = orderId;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setSelectedOrderId(orderId);
+      el.classList.add("ring-2", "ring-blue-500", "ring-offset-2", "transition");
+      setTimeout(() => el.classList.remove("ring-2", "ring-blue-500", "ring-offset-2"), 2600);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [orders, location.hash, location.key, showAwaitingApproval]);
 
   useEffect(() => {
     if (!notificationToast) {

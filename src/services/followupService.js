@@ -20,6 +20,10 @@ export const getApprovedReceived = () => axios.get(`${API()}/orders/followups/re
 // All follow-ups on a specific request (activity timeline).
 export const getFollowupsForOrder = (orderId) => axios.get(`${API()}/orders/${orderId}/followups`, cfg).then((r) => r.data?.data || []);
 
+// Approver marks the follow-up(s) on a request resolved — notifies the sender(s).
+export const resolveFollowup = (orderId, note) =>
+  axios.post(`${API()}/orders/${orderId}/followups/resolve`, { note: note || undefined }, cfg).then((r) => r.data?.data);
+
 // Send a follow-up on an existing request. Throws (with server message) on 400/403/404/429.
 export const sendFollowup = (orderId, note) =>
   axios.post(`${API()}/orders/${orderId}/followup`, { note: note || undefined }, cfg).then((r) => r.data?.data);
