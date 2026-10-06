@@ -41,6 +41,7 @@ const OrdersDashboard = ({setAuth}) => {
   const [error, setError] = useState(null);
   const [notificationToast, setNotificationToast] = useState(null);
   const [showAwaitingApproval, setShowAwaitingApproval] = useState(false);
+  const [mineOnly, setMineOnly] = useState(false); // approver "my requests only" history filter
   //const [filteredorders,setfilteredorders]=useState([])
 
   const [Data, setData] = useState({
@@ -76,7 +77,7 @@ const OrdersDashboard = ({setAuth}) => {
         setIsLoading(false)
       }
     }
-  const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={}) => {
+  const fetchData = async (page=Data.pagination?.page,limit=Data.pagination?.limit,rbacData={},mineFlag=mineOnly) => {
     setIsLoading(true);
     try {
         const { GENERAL_ACCESS_ORDERS = [], DEPARTMENTAL_ACCESS = [], APPROVALS_LIST=[] } = rbacData;
@@ -86,8 +87,9 @@ const OrdersDashboard = ({setAuth}) => {
         const API_URL = `${process.env.REACT_APP_API_URL}/api`;
         if (GENERAL_ACCESS_ORDERS.includes(user?.role)) {
           const res = await axios.get(`${API_URL}/orders`, {
-              params: { 
+              params: {
                 role:user?.role,
+                mine: mineFlag ? "true" : undefined,
                 page, limit },
               headers: {
                 
@@ -264,6 +266,13 @@ const OrdersDashboard = ({setAuth}) => {
  
   
   
+  const handleToggleMine = async () => {
+    const next = !mineOnly;
+    setMineOnly(next);
+    const rbacData = await rbac_();
+    fetchData(1, Data.pagination?.limit, rbacData, next); // reset to page 1 under new filter
+  };
+
   const handlePageChange =async (newPage) => {
     const rbacData=await rbac_();
     fetchData(newPage, Data.pagination?.limit,rbacData);
@@ -282,6 +291,10 @@ const shouldShowRightColumn =
 // Approvers get an "Awaiting my approval" queue folded into the main view
 const canSeeApprovalQueue = user?.canApprove;
 
+// General-access users see everyone's requests via /orders, so they get a
+// "my requests only" history toggle (server-side filter, correct pagination).
+const isGeneralApprover = ADMIN_ROLES_GENERAL?.includes(user?.role);
+
 return (
   <>
   {notificationToast && (
@@ -296,24 +309,39 @@ return (
     }`}
   >
     <div className="overflow-y-auto w-full lg:w-2/3">
-      {canSeeApprovalQueue && (
-        <div className="flex gap-2 mb-4 pt-6">
-          <button
-            onClick={() => setShowAwaitingApproval(false)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
-              !showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            All Requests
-          </button>
-          <button
-            onClick={() => setShowAwaitingApproval(true)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
-              showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Awaiting My Approval
-          </button>
+      {(canSeeApprovalQueue || isGeneralApprover) && (
+        <div className="flex flex-wrap gap-2 mb-4 pt-6 items-center">
+          {canSeeApprovalQueue && (
+            <>
+              <button
+                onClick={() => setShowAwaitingApproval(false)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+                  !showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                All Requests
+              </button>
+              <button
+                onClick={() => setShowAwaitingApproval(true)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+                  showAwaitingApproval ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Awaiting My Approval
+              </button>
+            </>
+          )}
+          {isGeneralApprover && !showAwaitingApproval && (
+            <button
+              onClick={handleToggleMine}
+              title="Show only requests you created"
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+                mineOnly ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              My requests only
+            </button>
+          )}
         </div>
       )}
 

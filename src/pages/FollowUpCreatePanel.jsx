@@ -26,9 +26,9 @@ export default function FollowUpCreatePanel({ user }) {
     try {
       const res = await axios.get(`${API()}/orders/StaffRequests`, { params: { userId: user?.userId }, withCredentials: true });
       const all = Array.isArray(res.data?.data) ? res.data.data : [];
-      // Only own, still-eligible requests (Pending / partially-approved). Terminal
-      // + "More Information" are excluded (FR-7); the backend re-checks anyway.
-      setRequests(all.filter((o) => o.status === "Pending"));
+      // Own, still-eligible requests: Pending (incl. partially-approved) or Approved
+      // (to chase fulfilment). Terminal + "More Information" excluded; backend re-checks.
+      setRequests(all.filter((o) => o.status === "Pending" || o.status === "Approved"));
     } catch (e) {
       setMsg({ type: "err", text: followupError(e, "Couldn't load your requests") });
     } finally {
@@ -72,7 +72,7 @@ export default function FollowUpCreatePanel({ user }) {
 
       <div className="relative mb-3">
         <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your pending requests by title or number"
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your open requests by title or number"
           className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
       </div>
 
@@ -80,14 +80,14 @@ export default function FollowUpCreatePanel({ user }) {
         {loading ? (
           <div className="p-4 text-gray-400 text-sm">Loading your requests…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-4 text-gray-400 text-sm">You have no pending requests to follow up on.</div>
+          <div className="p-4 text-gray-400 text-sm">You have no open requests to follow up on.</div>
         ) : (
           filtered.map((o) => (
             <label key={o._id} className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 cursor-pointer ${selectedId === o._id ? "bg-blue-50" : "hover:bg-gray-50"}`}>
               <input type="radio" name="followup-request" checked={selectedId === o._id} onChange={() => setSelectedId(o._id)} />
               <div className="min-w-0">
                 <div className="font-medium text-gray-800 truncate">{o.Title || o.orderNumber}</div>
-                <div className="text-xs text-gray-400">{o.orderNumber} · {fmt(o.createdAt)} · <span className="text-yellow-700">{o.status}</span></div>
+                <div className="text-xs text-gray-400">{o.orderNumber} · {fmt(o.createdAt)} · <span className={o.status === "Approved" ? "text-green-700" : "text-yellow-700"}>{o.status}</span></div>
               </div>
             </label>
           ))
