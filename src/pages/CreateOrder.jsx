@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { createOrder } from "../services/OrderService";
+import { useNavigate } from "react-router-dom";
+import { submitPurchaseOrder, newIdempotencyKey } from "../services/OrderService";
 import { fetch_RBAC_maintenance } from "../services/rbac_service";
 import { FileText, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,8 +23,29 @@ const buttonVariants = {
   hover: { scale: 1.05, transition: { yoyo: Infinity } },
 };
 
+// Progress text per submission stage — a silent wait is what led users to
+// resubmit (and create duplicate orders) in the first place.
+const STAGE_TEXT = {
+  checking: "Checking for duplicate requests…",
+  uploading: "Uploading attachment…",
+  creating: "Creating order…",
+};
+
+const timeAgo = (iso) => {
+  if (!iso) return "";
+  const secs = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+};
+
+const ORDERS_PAGE = "/admin/requestlist";
+
 const CreateOrder = () => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [targetDepartment,setTargetDepartment]=useState("")
   const [supplier, setSupplier] = useState("Halden");
   const [products, setProducts] = useState([{ name: "", quantity: 1, price: 0 }]);
@@ -44,6 +66,21 @@ const CreateOrder = () => {
   const [assetSubCategories, setAssetSubCategories] = useState([]);
   const [maintenanceAccess, setMaintenanceAccess] = useState({ departments: [], categoryByDepartment: {} });
   const [mode, setMode] = useState("new"); // "new" request vs "followup" on an existing one
+  // One Idempotency-Key per submission attempt: a retry of unchanged content
+  // reuses it; any edit (or a successful create) gets a new one.
+  const [idempotencyKey, setIdempotencyKey] = useState(() => newIdempotencyKey());
+  const [stage, setStage] = useState(null); // "checking" | "uploading" | "creating"
+  const [duplicate, setDuplicate] = useState(null); // 409 details + the submission to resend
+  const [success, setSuccess] = useState("");
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIdempotencyKey(newIdempotencyKey());
+  }, [Title, supplier, products, urgency, files, remarks, IsTarget, targetDepartment, isMaintenance, assetSubCategory]);
 
   // Backend (RBAC) is the source of truth for which departments may raise
   // maintenance requests and the asset category each maps to.
@@ -104,10 +141,75 @@ const CreateOrder = () => {
     }
   }
 
+  const resetForm = () => {
+    setSupplier("Halden");
+    setProducts([{ name: "", quantity: 1, price: 0 }]);
+    setUrgency("");
+    setFiles([]);
+    setfilenames([]);
+    setRemarks("");
+    settitle("");
+    setError("");
+    setrole("");
+    setIsTarget(false);
+    setTargetDepartment("");
+    setIsMaintenance(false);
+    setAssetSubCategory("");
+  };
+
+  /**
+   * Run one submission attempt. `key` is the attempt's Idempotency-Key; a
+   * "Create anyway" resend uses the same key and payload with confirmDuplicate.
+   */
+  const runSubmission = async ({ payload, files: attachments, key, confirmDuplicate = false, retriedKey = false }) => {
+    setIsSubmitting(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await submitPurchaseOrder({
+        orderData: payload,
+        files: attachments,
+        idempotencyKey: key,
+        confirmDuplicate,
+        onStage: setStage,
+      });
+
+      if (result.status === "created") {
+        // 201 and a 200 replay of this attempt are both a success.
+        resetForm();
+        setIdempotencyKey(newIdempotencyKey());
+        setSuccess(
+          result.order?.orderNumber
+            ? `Request ${result.order.orderNumber} submitted successfully.`
+            : "Request submitted successfully."
+        );
+      } else if (result.status === "duplicate") {
+        setDuplicate({ ...result, submission: { payload, files: attachments, key } });
+      } else if (result.status === "key_reused" && !retriedKey) {
+        // The key was already used for different content: retry once with a new one.
+        const freshKey = newIdempotencyKey();
+        setIdempotencyKey(freshKey);
+        return runSubmission({ payload, files: attachments, key: freshKey, confirmDuplicate, retriedKey: true });
+      } else {
+        setError("The request could not be submitted. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      setError("It seems there was an error processing your Request. Check My Requests before trying again.");
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setError("Session expired. Please log in again.");
+        window.location.href = "/adminlogin";
+      }
+    } finally {
+      setIsSubmitting(false);
+      setStage(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const formData = new FormData();
+    if (isSubmitting) return; // never double-submit
+
     const payload = {
       supplier,
       email,
@@ -118,12 +220,9 @@ const CreateOrder = () => {
       Title,
       staff,
       role,
-
     };
-    formData.append("email", email);
-    formData.append("userId",user.userId)
-    if (IsTarget){
-      payload.targetDepartment=targetDepartment
+    if (IsTarget) {
+      payload.targetDepartment = targetDepartment;
     }
 
     if (canRaiseMaintenance && isMaintenance) {
@@ -136,49 +235,19 @@ const CreateOrder = () => {
       payload.assetSubCategory = assetSubCategory;
     }
 
+    await runSubmission({ payload, files, key: idempotencyKey });
+  };
 
+  const createDuplicateAnyway = () => {
+    const { submission } = duplicate;
+    setDuplicate(null);
+    runSubmission({ ...submission, confirmDuplicate: true });
+  };
 
-    files.forEach((file) => {
-      formData.append("file", file);
-    });
-   
-
-    try {
-      setIsSubmitting(true);
-      const requestupload = await createOrder({ formData: formData, orderData: payload });
-     
-      if (requestupload.order?.data?.success===true){
-
-        // Reset form
-        setSupplier("Halden");
-        setProducts([{ name: "", quantity: 1, price: 0 }]);
-        setUrgency("");
-        setFiles([]);
-        setRemarks("");
-        settitle("");
-        setError("")
-        setrole("")
-        setTargetDepartment("")
-        setIsMaintenance(false)
-        setAssetSubCategory("")
-      }else{
-        setError("the file/Request was not sent please Refresh Page")
-        
-      }
-    
-    } catch (error) {
-      console.error("Error creating order:", error);
-      setError(" It seems there was an error processing your Request")
-      if (error.response?.status===401|| error.response?.status===403){
-          setError("Session expired. Please log in again.");
-          //localStorage.removeItem('sessionId');
-          
-          window.location.href = '/adminlogin';}
-
-      //alert("Failed to create order. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const viewExistingOrder = () => {
+    const id = duplicate?.existingOrder?.id;
+    setDuplicate(null);
+    navigate(id ? `${ORDERS_PAGE}#order-${id}` : ORDERS_PAGE);
   };
 
    
@@ -224,15 +293,83 @@ const CreateOrder = () => {
               transition={{ type: "spring", damping: 20 }}
             >
               <Loader2 className="animate-spin h-12 w-12 text-blue-500 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Processing Your Request</h3>
+              <h3 className="text-xl font-semibold mb-2" role="status" aria-live="polite">
+                {STAGE_TEXT[stage] || "Processing Your Request"}
+              </h3>
               <p className="text-gray-600 text-center">
-                Please wait while we submit your purchase request. 
-                This may take a moment, especially if you've attached files.
+                Please keep this page open — your request is being submitted.
+                Attachments can take a moment; don't submit it again.
               </p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Possible-duplicate confirmation (409 POSSIBLE_DUPLICATE) */}
+      {duplicate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="duplicate-po-title"
+            className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full"
+          >
+            <h3 id="duplicate-po-title" className="text-lg font-semibold text-gray-800 mb-3">
+              Possible duplicate request
+            </h3>
+            {duplicate.inProgress ? (
+              <>
+                <p className="text-gray-700 mb-5">
+                  An identical order is being submitted right now. Please wait and check your
+                  orders before trying again.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDuplicate(null)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={viewExistingOrder}
+                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                  >
+                    Check my orders
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-700 mb-5">
+                  You already submitted an identical purchase order
+                  {duplicate.existingOrder?.orderNumber && (
+                    <> (<strong>{duplicate.existingOrder.orderNumber}</strong>{duplicate.existingOrder.createdAt ? `, ${timeAgo(duplicate.existingOrder.createdAt)}` : ""})</>
+                  )}
+                  . Create another one anyway?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={viewExistingOrder}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel — view existing order
+                  </button>
+                  <button
+                    type="button"
+                    onClick={createDuplicateAnyway}
+                    className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                  >
+                    Create anyway
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <motion.div
         className="min-h-screen bg-gray-100 flex justify-center items-center p-6"
@@ -515,12 +652,17 @@ const CreateOrder = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin h-5 w-5" />
-                  <span>Processing Request...</span>
+                  <span>{STAGE_TEXT[stage] || "Processing Request..."}</span>
                 </>
               ) : (
                 "Create Request"
               )}
             </motion.button>
+            {success && (
+            <div role="status" className="p-4 flex justify-center items-center text-green-700 border-l-4 border-green-500 bg-green-100">
+              {success}
+            </div>
+          )}
             {Error && (
             <div className="p-4 flex  justify-center items-center  text-red-600 border-l-4 border-red-500 bg-red-200">
               {Error}
