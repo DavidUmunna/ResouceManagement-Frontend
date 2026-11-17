@@ -72,55 +72,108 @@ export const getOrders = async (page , limit ) => {
 };
 
 
-export const createOrder = async ({ formData, orderData }) => {
-  try {
-    let uploadedFileIds = [];
-    //const token_csrf = getCookie('XSRF-TOKEN');
-    
-    // STEP 1: Upload files if present
-  
-    if (formData && formData.has("file")) {
-      const fileResponse = await axios.post(`${API_URL}/fileupload/create`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "ngrok-skip-browser-warning": "true",
-          
-      },withCredentials:true}
-    );
+// ── Purchase-order submission (duplicate-protected) ──────────────────────────
 
-      // Extract file IDs from response
-      uploadedFileIds = fileResponse?.data?.files?._id; //the file Id is gotten and attatched tot he oerderdata for use as fileRef
-    }
+/**
+ * One key per submission attempt, sent as the Idempotency-Key header. Retrying
+ * the same attempt reuses it (the server returns the order it already created);
+ * changed content or a new attempt gets a new key. Format: [A-Za-z0-9-_].
+ */
+export const newIdempotencyKey = () => {
+  const c = typeof window !== "undefined" ? window.crypto : undefined;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  if (c && typeof c.getRandomValues === "function") {
+    const bytes = c.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+};
 
-    // STEP 2: Attach file IDs if available
-    if (uploadedFileIds.length > 0) {
-      orderData.fileRefs = uploadedFileIds;
-    }
+const orderRequestConfig = (idempotencyKey) => ({
+  headers: { "ngrok-skip-browser-warning": "true", "Idempotency-Key": idempotencyKey },
+  withCredentials: true,
+});
 
-    //  STEP 3: Always send order
-    const orderResponse = await axios.post(`${API_URL}/orders`, orderData, {
-      headers: {
-       
-        "ngrok-skip-browser-warning": "true",
-      },
-      withCredentials:true
-    });
-
+/** Map a duplicate-protection response (or axios error) to a result, or null. */
+const toDedupeResult = (status, data) => {
+  if (status === 409 && data?.code === "POSSIBLE_DUPLICATE") {
     return {
-      file: uploadedFileIds,
-      order: orderResponse,
+      status: "duplicate",
+      existingOrder: data.existingOrder || null,
+      inProgress: !!data.inProgress,
+      message: data.message,
     };
-  } catch (error) {
-    if(isProd){
+  }
+  if (status === 422 && data?.code === "IDEMPOTENCY_KEY_REUSED") return { status: "key_reused" };
+  return null;
+};
 
+const releasePrecheck = (idempotencyKey) =>
+  axios
+    .post(`${API_URL}/${orders}/precheck/release`, {}, orderRequestConfig(idempotencyKey))
+    .catch(() => {}); // best-effort; the reservation also expires on its own
+
+/**
+ * Submit a purchase order: precheck (reserve) → upload attachment → create.
+ *
+ * The precheck runs BEFORE the upload so a duplicate is rejected before any
+ * file is uploaded. Resolves to one of:
+ *   { status: "created", order, replayed }      — 201, or 200 replay of this attempt
+ *   { status: "duplicate", existingOrder, inProgress, message } — 409
+ *   { status: "key_reused" }                    — 422 (caller should use a new key)
+ * Throws on other errors (network, 401/403, 5xx) after releasing the reservation.
+ *
+ * @param {{ orderData: object, files?: File[], idempotencyKey: string,
+ *           confirmDuplicate?: boolean, onStage?: (stage: "checking"|"uploading"|"creating") => void }} args
+ */
+export const submitPurchaseOrder = async ({ orderData, files = [], idempotencyKey, confirmDuplicate = false, onStage = () => {} }) => {
+  const body = confirmDuplicate ? { ...orderData, confirmDuplicate: true } : { ...orderData };
+  let reserved = false;
+
+  // 1. Precheck — reserve this submission before uploading anything.
+  onStage("checking");
+  try {
+    const pre = await axios.post(`${API_URL}/${orders}/precheck`, body, orderRequestConfig(idempotencyKey));
+    if (pre?.data?.replayed) {
+      return { status: "created", order: pre.data.newOrder, replayed: true };
+    }
+    reserved = true;
+  } catch (error) {
+    const result = toDedupeResult(error.response?.status, error.response?.data);
+    if (result) return result;
+    // 404: backend without the precheck endpoint — fall through to the
+    // classic upload + create (still protected server-side on create).
+    if (error.response?.status !== 404) throw error;
+  }
+
+  try {
+    // 2. Upload the attachment(s).
+    if (files.length > 0) {
+      onStage("uploading");
+      const formData = new FormData();
+      files.forEach((file) => formData.append("file", file));
+      const fileResponse = await axios.post(`${API_URL}/fileupload/create`, formData, {
+        headers: { "Content-Type": "multipart/form-data", "ngrok-skip-browser-warning": "true" },
+        withCredentials: true,
+      });
+      const fileId = fileResponse?.data?.files?._id;
+      if (fileId) body.fileRefs = fileId;
+    }
+
+    // 3. Create the order.
+    onStage("creating");
+    const res = await axios.post(`${API_URL}/${orders}`, body, orderRequestConfig(idempotencyKey));
+    return { status: "created", order: res.data?.newOrder, replayed: res.status === 200 };
+  } catch (error) {
+    const result = toDedupeResult(error.response?.status, error.response?.data);
+    if (result) return result;
+    // Abandoned attempt: free the reservation (no-op if the order was created).
+    if (reserved) await releasePrecheck(idempotencyKey);
+    if (isProd) {
       Sentry.captureMessage("Error creating order");
       Sentry.captureException(error);
     }
-    return {
-      file: null,
-      order: null,
-      error,
-    };
+    throw error;
   }
 };
 
