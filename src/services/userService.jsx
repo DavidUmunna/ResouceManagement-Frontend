@@ -27,6 +27,26 @@ export const get_users = async (params = {}) => {
   }
 };
 
+// GET /api/users is paginated (20 per page by default, 100 max). This walks every page
+// and returns { data: [...all users], total }, the same shape the leave pages expect.
+// Throws on failure so callers can show their own error.
+export const get_all_users = async () => {
+  const all = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const response = await axios.get(`${API_URL}/${route}`, {
+      params: { page, limit: 100 },
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      withCredentials: true,
+    });
+    all.push(...(response.data?.data || []));
+    totalPages = response.data?.totalPages || 1;
+    page += 1;
+  } while (page <= totalPages);
+  return { data: all, total: all.length };
+};
+
 export const sendResetLink=async(email)=>{
   try{
     const response=await axios.put(`${API_URL}/${route}/reset`,{email},{headers:{ "ngrok-skip-browser-warning": "true"}})

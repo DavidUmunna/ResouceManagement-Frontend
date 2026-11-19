@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
 import { useUser } from '../../../components/usercontext';
+import { get_all_users } from '../../../services/userService';
 import {
   getLeaveRequests,
   approveLeaveRequest,
@@ -15,7 +16,6 @@ import EntitlementEditor from './EntitlementEditor';
 import InfoModal from '../../../components/InfoModal';
 import { DeleteConfirmationModal } from '../../../components/DeleteConfirmationModal';
 import { fetch_RBAC_leave } from '../../../services/rbac_service';
-import axios from 'axios';
 
 const LEAVE_TYPES = ['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid'];
 const STATUSES    = ['Pending', 'Approved', 'Rejected', 'Cancelled'];
@@ -104,13 +104,9 @@ export default function AdminLeavePanel() {
 
   useEffect(() => {
     if (activeTab !== 'Entitlements') return;
-    const API = process.env.REACT_APP_API_URL;
-    axios
-      .get(`${API}/api/users`, {
-        withCredentials: true,
-        headers: { 'ngrok-skip-browser-warning': 'true' },
-      })
-      .then((r) => setUsers(r.data?.users || r.data || []))
+    // Load every user, not just the first page of 20
+    get_all_users()
+      .then(setUsers)
       .catch(() => toast.error('Failed to load users'));
   }, [activeTab]);
 

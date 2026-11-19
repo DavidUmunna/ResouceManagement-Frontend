@@ -6,6 +6,7 @@ import {
 import axios from 'axios';
 import { useUser } from '../components/usercontext';
 import { fetch_RBAC_department } from '../services/rbac_service';
+import { get_all_users } from '../services/userService';
 import * as Sentry from "@sentry/react"
 import { isProd } from '../components/env';
 
@@ -69,20 +70,6 @@ const DepartmentManagement = ({ setAuth }) => {
 
     }
   }
-  // GET /api/users is paginated (20 per page by default, 100 max), so walk every page.
-  const fetchAllUsers = async (API_URL) => {
-    const all = [];
-    let page = 1;
-    let totalPages = 1;
-    do {
-      const res = await axios.get(`${API_URL}/users`, { params: { page, limit: 100 }, withCredentials: true });
-      all.push(...(res.data.data || []));
-      totalPages = res.data.totalPages || 1;
-      page += 1;
-    } while (page <= totalPages);
-    return all;
-  };
-
   // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
@@ -94,7 +81,7 @@ const DepartmentManagement = ({ setAuth }) => {
       try {
         const [deptRes, usersRes, tasksRes, statsRes] = await Promise.allSettled([
           axios.get(`${API_URL}/department`, { withCredentials:true }),
-          fetchAllUsers(API_URL),
+          get_all_users().then(r => r.data),
           axios.get(`${API_URL}/tasks`, {withCredentials:true }),
           axios.get(`${API_URL}/department/stats`, { withCredentials:true })
         ]);

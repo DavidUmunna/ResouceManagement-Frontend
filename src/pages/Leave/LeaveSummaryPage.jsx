@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { useUser } from '../../components/usercontext';
 import { getLeaveRequests, getUserBalance } from '../../services/leaveService';
+import { get_all_users } from '../../services/userService';
 import { fetch_RBAC_leave } from '../../services/rbac_service';
 import InfoModal from '../../components/InfoModal';
 
@@ -165,16 +165,13 @@ export default function LeaveSummaryPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const API = process.env.REACT_APP_API_URL;
-      const [usersRes, requestsRes] = await Promise.all([
-        axios.get(`${API}/api/users`, {
-          withCredentials: true,
-          headers: { 'ngrok-skip-browser-warning': 'true' },
-        }),
+      // Load every user, not just the first page of 20
+      const [allUsers, requestsRes] = await Promise.all([
+        get_all_users(),
         getLeaveRequests(),
       ]);
       ReactDOM.unstable_batchedUpdates(() => {
-        setUsers(usersRes.data?.users || usersRes.data || []);
+        setUsers(allUsers);
         setRequests(requestsRes.data || []);
         setLoading(false);
       });
