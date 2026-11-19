@@ -8,7 +8,7 @@ import { FiFileText, FiTruck } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { forwardRef, useState } from 'react';
 import { useUser } from './usercontext';
-import { ROUTE_ROLES as R } from '../constants/roles';
+import { ROUTE_ROLES as R, ROUTE_ALSO_ALLOWED } from '../constants/roles';
 
 const NAV_GROUPS = [
   {
@@ -27,7 +27,7 @@ const NAV_GROUPS = [
     label: 'Human Resources',
     icon: Users,
     items: [
-      { name: 'Department Assignment', to: '/admin/departmentassignment', icon: Building2,      visibleTo: R.departmentassignment },
+      { name: 'Department Assignment', to: '/admin/departmentassignment', icon: Building2,      visibleTo: R.departmentassignment, alsoVisibleIf: ROUTE_ALSO_ALLOWED.departmentassignment },
       { name: 'My Leave',              to: '/admin/leave',                icon: CalendarDays },
       { name: 'Leave Admin',           to: '/admin/leave-admin',          icon: ShieldCheck,    visibleTo: R['leave-admin'] },
       { name: 'Leave Summary',         to: '/admin/leave-summary',        icon: BarChart2,      visibleTo: R['leave-summary'] },
@@ -63,7 +63,11 @@ const Sidebar = forwardRef(({ isOpen, onClose }, ref) => {
 
   const visibleGroups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => !item.visibleTo || item.visibleTo.includes(user?.role)),
+    items: group.items.filter((item) =>
+      !item.visibleTo ||
+      item.visibleTo.includes(user?.role) ||
+      (item.alsoVisibleIf && item.alsoVisibleIf(user))
+    ),
   })).filter((group) => group.items.length > 0);
 
   return (

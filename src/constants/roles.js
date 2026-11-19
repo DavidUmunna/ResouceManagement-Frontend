@@ -16,11 +16,19 @@ export const ROUTE_ROLES = {
   tenders:             ['global_admin'],
   filetracking:        ['Contracts_manager', 'global_admin'],
   // no entry for 'ai-tools' — every authenticated user can access it
-  departmentassignment:['global_admin'],
+  // Must match the backend's DEPARTMENT_ADMIN_ROLES (constants/department.constants.js).
+  // Heads of department also get in via user.isHeadOfDepartment (see ROUTE_ALSO_ALLOWED).
+  departmentassignment:['admin', 'global_admin', 'human_resources'],
   skipstracking:       ['global_admin', 'Waste Management Manager', 'Waste Management Supervisor', 'Logistics Manager'],
   monitoring:          ['global_admin'],
   'leave-admin':       ['admin', 'global_admin', 'human_resources'],
   'leave-summary':     ['Director', 'global_admin'],
   'po-analytics':      [ 'global_admin', 'procurement_officer', 'Financial_manager', 'Director', 'Accountant', 'internal_auditor'],
   // Routes with no entry are visible to every authenticated user
+};
+
+// Extra access that a role list can't express. Head of department is a relationship
+// (Department.headOfDepartment), not a role, so /api/access sends user.isHeadOfDepartment.
+export const ROUTE_ALSO_ALLOWED = {
+  departmentassignment: (user) => Boolean(user?.isHeadOfDepartment),
 };

@@ -16,7 +16,7 @@ export const get_users = async (params = {}) => {
       Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v !== undefined))
     ).toString();
     const url = query ? `${API_URL}/${route}?${query}` : `${API_URL}/${route}`;
-    const response = await axios.get(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const response = await axios.get(url, { headers: { 'ngrok-skip-browser-warning': 'true' }, withCredentials: true });
     return response.data;
   } catch (error) {
     if (isProd) {

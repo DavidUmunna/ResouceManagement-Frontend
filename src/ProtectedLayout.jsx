@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import "./index.css";
 import AppLayout   from "./components/AppLayout";
 import RoleGuard   from "./components/RoleGuard";
-import { ROUTE_ROLES as R } from "./constants/roles";
+import { ROUTE_ROLES as R, ROUTE_ALSO_ALLOWED } from "./constants/roles";
 import { useVersionCheck } from "./hooks/useVersionCheck";
 import { ensureFreshToken, subscribeToForegroundMessages } from "./firebaseConfig";
 
@@ -47,7 +47,9 @@ function LoadingFallback() {
 // Thin wrapper so route JSX stays readable
 function Guard({ route, children }) {
   const allowed = R[route];
-  return allowed ? <RoleGuard allowed={allowed}>{children}</RoleGuard> : children;
+  return allowed
+    ? <RoleGuard allowed={allowed} allowIf={ROUTE_ALSO_ALLOWED[route]}>{children}</RoleGuard>
+    : children;
 }
 
 function NewVersionBanner() {

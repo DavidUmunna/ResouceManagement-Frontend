@@ -9,6 +9,22 @@ import { fetch_RBAC_department } from '../services/rbac_service';
 import * as Sentry from "@sentry/react"
 import { isProd } from '../components/env';
 
+// Must match the Department name enum in the backend user model (models/users_.js)
+const DEPARTMENT_OPTIONS = [
+  { value: 'Administration', label: 'Administration' },
+  { value: 'accounts_dep', label: 'Accounts' },
+  { value: 'Business_Development', label: 'Business Development' },
+  { value: 'Contracts_Department', label: 'Contracts' },
+  { value: 'Engineering_Department', label: 'Engineering' },
+  { value: 'Environmental_lab_dep', label: 'Environmental Lab' },
+  { value: 'Human resources', label: 'Human Resources' },
+  { value: 'IT', label: 'IT' },
+  { value: 'Procurement_department', label: 'Procurement' },
+  { value: 'PVT', label: 'PVT' },
+  { value: 'QHSE_dep', label: 'QHSE' },
+  { value: 'waste_management_dep', label: 'Waste Management' },
+];
+
 const DepartmentManagement = ({ setAuth }) => {
   // State
   const {user}=useUser()
@@ -20,7 +36,9 @@ const DepartmentManagement = ({ setAuth }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
-  const [Error,setError]=useState("")
+  const [pageError, setPageError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [ADMIN_ROLES,set_ADMIN_ROLES]=useState([])
   // UI State
   const [expandedDept, setExpandedDept] = useState(null);
@@ -36,8 +54,7 @@ const DepartmentManagement = ({ setAuth }) => {
     taskTitle: '', 
     taskDescription: '', 
     assignedTo: '',
-    dueDate: '',
-    status:'Pending'
+    dueDate: ''
   });
   const rbac_=async()=>{
     try{
@@ -52,6 +69,20 @@ const DepartmentManagement = ({ setAuth }) => {
 
     }
   }
+  // GET /api/users is paginated (20 per page by default, 100 max), so walk every page.
+  const fetchAllUsers = async (API_URL) => {
+    const all = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const res = await axios.get(`${API_URL}/users`, { params: { page, limit: 100 }, withCredentials: true });
+      all.push(...(res.data.data || []));
+      totalPages = res.data.totalPages || 1;
+      page += 1;
+    } while (page <= totalPages);
+    return all;
+  };
+
   // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +94,7 @@ const DepartmentManagement = ({ setAuth }) => {
       try {
         const [deptRes, usersRes, tasksRes, statsRes] = await Promise.allSettled([
           axios.get(`${API_URL}/department`, { withCredentials:true }),
-          axios.get(`${API_URL}/users`, {withCredentials:true }),
+          fetchAllUsers(API_URL),
           axios.get(`${API_URL}/tasks`, {withCredentials:true }),
           axios.get(`${API_URL}/department/stats`, { withCredentials:true })
         ]);
@@ -72,10 +103,10 @@ const DepartmentManagement = ({ setAuth }) => {
         const allResults = [deptRes, usersRes, tasksRes, statsRes];
         const unauthorized = allResults.find(r =>
           r.status === 'rejected' &&
-          (r.reason?.response?.status === 401 || r.reason?.response?.status === 403)
+          r.reason?.response?.status === 401
         );
         if (unauthorized) {
-          setError("Session expired. Please log in again.");
+          setPageError("Session expired. Please log in again.");
           localStorage.removeItem('sessionId');
           setAuth(false);
           window.location.href = '/adminlogin';
@@ -83,9 +114,12 @@ const DepartmentManagement = ({ setAuth }) => {
         }
 
         setDepartments(deptRes.status === 'fulfilled' ? deptRes.value.data.data : []);
-        setUsers(usersRes.status === 'fulfilled' ? usersRes.value.data.data : []);
+        setUsers(usersRes.status === 'fulfilled' ? usersRes.value : []);
         setTasks(tasksRes.status === 'fulfilled' ? tasksRes.value.data.data : []);
         setStats(statsRes.status === 'fulfilled' ? (statsRes.value.data.data || []) : []);
+        if ([deptRes, tasksRes].some(r => r.status === 'rejected')) {
+          setPageError("Some department data failed to load. Refresh to try again.");
+        }
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -111,8 +145,33 @@ const fetchDepartments = async () => {
   }
 };
 
+const fetchStats = async () => {
+  try {
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`
+    const response = await axios.get(`${API_URL}/department/stats`, { withCredentials: true });
+    setStats(response.data.data || []);
+  } catch (err) {
+    console.error("Failed to fetch department stats:", err);
+  }
+};
+
 const refreshDepartments = () => {
-  fetchDepartments(); // Simply recall the fetch function
+  fetchDepartments();
+  fetchStats();
+};
+
+// Shared error handling for actions: session expiry logs out, anything else is shown to the user.
+const handleActionError = (err, fallback, setter) => {
+  if (err.response?.status === 401) {
+    setPageError("Session expired. Please log in again.");
+    localStorage.removeItem('sessionId');
+    setAuth(false);
+    window.location.href = '/adminlogin';
+    return;
+  }
+  const apiErrors = err.response?.data?.errors;
+  const message = err.response?.data?.message || (Array.isArray(apiErrors) && apiErrors[0]?.msg) || fallback;
+  setter(message);
 };
   
   // Filter departments based on search term
@@ -123,13 +182,15 @@ const refreshDepartments = () => {
 
   const deleteTask=async(taskId)=>{
     const taskToRestore = tasks.find(t => t._id === taskId);
+    if (!window.confirm(`Delete the task "${taskToRestore?.title || ''}"? This cannot be undone.`)) return;
     try{
       const API_URL = `${process.env.REACT_APP_API_URL}/api`
       setTasks(prevTasks => prevTasks.filter(t => t._id !== taskId));
-      await axios.delete(`${API_URL}/tasks/${taskId}`);
+      await axios.delete(`${API_URL}/tasks/${taskId}`, { withCredentials: true });
+      fetchStats();
     }catch(error){
       if (taskToRestore) setTasks(prevTasks => [...prevTasks, taskToRestore]);
-      console.error(error.response?.data||error.message)
+      handleActionError(error, "Could not delete the task.", setPageError);
     }
   }
   
@@ -142,11 +203,10 @@ const refreshDepartments = () => {
       taskTitle: '', 
       taskDescription: '', 
       assignedTo: '',
-      dueDate: '',
-      status:''
-      
+      dueDate: ''
     });
     setSelectedUserId('');
+    setActionError('');
   };
   
 
@@ -166,10 +226,11 @@ const refreshDepartments = () => {
             users,
             currentHead: data.headOfDepartment?.user?._id 
           };
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             name: data.name,
             headOfDepartment: data.headOfDepartment?.user?._id || ''
-          });
+          }));
           break;
           
         case 'deleteDept':
@@ -177,9 +238,8 @@ const refreshDepartments = () => {
           break;
           
         case 'addUser':
-          const existingUserIds = data.users.map(d => 
-            d.user?._id?.toString() || d.user?.toString()
-          ).filter(Boolean);
+          // Members are stored as { _id: <user id>, name }
+          const existingUserIds = (data.users || []).map(m => String(m._id)).filter(Boolean);
           
           modalData = {
             ...data,
@@ -219,9 +279,11 @@ const refreshDepartments = () => {
   
   // Department Operations
   const handleDepartmentSubmit = async () => {
+    if (!formData.name || !formData.headOfDepartment) {
+      setActionError("Choose a department name and a head of department.");
+      return;
+    }
     try {
-
-      
       const departmentData = {
         name: formData.name,
         headOfDepartment: {
@@ -242,8 +304,9 @@ const refreshDepartments = () => {
       }
       
       closeModal();
+      fetchStats();
     } catch (err) {
-      console.error("Department error:", err.response?.data || err.message);
+      handleActionError(err, "Could not save the department.", setActionError);
     }
   };
   const fetchTasks = async () => {
@@ -271,11 +334,17 @@ const refreshDepartments = () => {
       setDepartments(prev => prev.filter(d => d._id !== modal.data._id));
       closeModal();
     } catch (err) {
-      if(isProd)Sentry.captureException(err)}
+      if(isProd)Sentry.captureException(err)
+      handleActionError(err, "Could not delete the department.", setActionError);
+    }
   };
 
   // User Operations
   const addUserToDepartment = async () => {
+    if (!selectedUserId) {
+      setActionError("Select a user to add.");
+      return;
+    }
     try {
       
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
@@ -291,20 +360,14 @@ const refreshDepartments = () => {
         d._id === modal.data._id ? response.data.data : d
       ));
       closeModal();
+      fetchStats();
     } catch (err) {
-      if (err.response?.status===401|| err.response?.status===403){
-        setError("Session expired. Please log in again.");
-        localStorage.removeItem('sessionId');
-        setAuth(false)
-        window.location.href = '/adminlogin'; 
-      }else{
-
-        console.error("Add user error:", err.response?.data || err.message);
-      }
+      handleActionError(err, "Could not add this user.", setActionError);
     }
   };
 
-  const removeUserFromDepartment = async (departmentId,userId) => {
+  const removeUserFromDepartment = async (departmentId, userId, userName) => {
+    if (!window.confirm(`Remove ${userName || 'this member'} from the department?`)) return;
     try {
 
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
@@ -317,15 +380,7 @@ const refreshDepartments = () => {
       
       refreshDepartments()
     } catch (err) {
-      if (err.response?.status===401|| err.response?.status===403){
-        setError("Session expired. Please log in again.");
-        localStorage.removeItem('sessionId');
-        setAuth(false)
-        window.location.href = '/adminlogin'; 
-      }else{
-
-        console.error("Remove user error:", err.response?.data || err.message);
-      }
+      handleActionError(err, "Could not remove this member.", setPageError);
     }
   };
   const visibleDepartments = filteredDepartments.filter(dept => {
@@ -336,26 +391,27 @@ const refreshDepartments = () => {
   })
   // Task Operations
   const assignTask = async () => {
+    if (!formData.taskTitle.trim() || !formData.assignedTo || !formData.dueDate) {
+      setActionError("Add a title, an assignee and a due date.");
+      return;
+    }
     try {
       const API_URL=`${process.env.REACT_APP_API_URL}/api`
+      // createdBy is taken from the session on the server; new tasks always start as Pending
       await axios.post(`${API_URL}/tasks`, {
-        title: formData.taskTitle,
+        title: formData.taskTitle.trim(),
         description: formData.taskDescription,
         assignedTo: formData.assignedTo,
         department: modal.data._id,
-        dueDate: formData.dueDate,
-        createdBy: user.userId,
-        status:formData.status|| 'Pending'
-       // status:
+        dueDate: formData.dueDate
       }, { 
         withCredentials: true 
       });
-     
-      //setTasks(prev => [...prev, response.data.data]);
       fetchTasks()
+      fetchStats()
       closeModal();
     } catch (err) {
-      console.error("Task error:", err.response?.data || err.message);
+      handleActionError(err, "Could not assign the task.", setActionError);
     }
   };
   if (loading){
@@ -378,23 +434,23 @@ const refreshDepartments = () => {
         {stat ? (
           <div className="grid grid-cols-2 gap-4">
             <StatCard
-              title="Total Members"
-              value={stat?.memberCount}
-              trend="↗︎ 2 this month"
+              title="Members"
+              value={stat.memberCount ?? 0}
             />
             <StatCard
-              title="Active Tasks"
-              value={stat?.activeTasks || 0}
-              trend={`${stat?.taskCompletion || 0}% completed`}
+              title="Open Tasks"
+              value={stat.activeTasks ?? 0}
+              trend={`${stat.taskCompletion ?? 0}% of ${stat.totalTasks ?? 0} tasks completed`}
             />
             <StatCard
-              title="Avg. Task Time"
-              value={Math.ceil(stat?.avgTaskTimeHours) || 'N/A'}
-              trend="Last month: 3.2 days"
+              title="Overdue Tasks"
+              value={stat.overdueTasks ?? 0}
+              trend="Past due and not completed"
             />
             <StatCard
-              title="Head Since"
-              value={new Date(department.createdAt.split("T")[0]).toLocaleDateString() || 'N/A'}
+              title="Avg. Completion Time"
+              value={stat.avgCompletionDays != null ? `${stat.avgCompletionDays} ${stat.avgCompletionDays === 1 ? 'day' : 'days'}` : 'N/A'}
+              trend="From assignment to completion"
             />
           </div>
         ) : (
@@ -421,14 +477,17 @@ const refreshDepartments = () => {
         <p className="text-gray-500 text-sm italic">No tasks assigned</p>
       ) : (
         <div className="space-y-2">
-          {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).map(task => (
+          {tasks.filter(t => String(t.department?._id || t.department) === String(department._id)).map(task => {
+            const isOverdue = task.status !== 'Completed' && task.dueDate && new Date(task.dueDate) < new Date();
+            return (
             <div key={task._id} className="p-3 bg-white rounded border border-gray-200">
 
-               <div className='flex '>
-                
+               <div className='flex justify-end'>
                 <button
                       onClick={() => deleteTask(task._id)}
                       className="text-red-500 hover:text-red-700"
+                      aria-label={`Delete task ${task.title}`}
+                      title="Delete task"
                     >
                       <FiX />
                   </button>
@@ -439,18 +498,18 @@ const refreshDepartments = () => {
                   <p className="text-sm text-gray-500">{task.description}</p>
                 </div>
                 <span className="text-xs bg-green-100 text-green-800 px-2 py-2 rounded-full">
-                  Assigned to: {department.users.find(u => String(u._id) === String(task.assignedTo?._id || task.assignedTo))?.name || 'Unassigned'}
+                  Assigned to: {task.assignedTo?.name || department.users.find(u => String(u._id) === String(task.assignedTo?._id || task.assignedTo))?.name || 'Unassigned'}
                 </span>
               </div>
               <div className="flex justify-between mt-2 text-xs text-gray-500">
-                <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                <span className={isOverdue ? 'text-orange-700 font-semibold' : ''}>
+                  Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}{isOverdue && ' · Overdue'}
+                </span>
                 <span>Status: {task.status}</span>
               </div>
-             
-             
-              
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -474,17 +533,20 @@ const refreshDepartments = () => {
             <div className="flex items-center">
               <FiUsers className="mr-2 text-gray-400" />
               <span>{user.name}</span>
-              {department.headOfDepartment?.user?._id === user._id && (
+              {String(department.headOfDepartment?.user?._id || department.headOfDepartment?.user) === String(user._id) && (
                 <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
                   Head
                 </span>
               )}
             </div>
             
-            {(department.headOfDepartment?.user?._id === currentuser.userId || ADMIN_ROLES.includes(currentuser.role) )&& (
+            {(String(department.headOfDepartment?.user?._id) === String(currentuser.userId) || ADMIN_ROLES.includes(currentuser.role)) &&
+              String(department.headOfDepartment?.user?._id) !== String(user._id) && (
               <button
-                onClick={() =>removeUserFromDepartment(department._id,user._id)}
+                onClick={() =>removeUserFromDepartment(department._id,user._id,user.name)}
                 className="text-red-500 hover:text-red-700"
+                aria-label={`Remove ${user.name} from department`}
+                title="Remove member"
               >
                 <FiX />
               </button>
@@ -529,6 +591,15 @@ const refreshDepartments = () => {
       </div>
 
 
+      {pageError && (
+        <div role="alert" className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex justify-between items-center">
+          <span>{pageError}</span>
+          <button onClick={() => setPageError('')} className="text-red-700 hover:text-red-900" aria-label="Dismiss">
+            <FiX />
+          </button>
+        </div>
+      )}
+
       {/* Departments List */}
       <div className="space-y-6">
         {visibleDepartments.length === 0 ? (
@@ -558,6 +629,7 @@ const refreshDepartments = () => {
 
               {expandedDept === dept._id && (
                 <div className="border-t border-gray-200 p-4 bg-gray-50 space-y-4">
+                  {ADMIN_ROLES.includes(user.role) && (
                   <div className="flex justify-end space-x-2">
                     <button
                       onClick={() => openModal('editDept', dept)}
@@ -574,6 +646,7 @@ const refreshDepartments = () => {
                       <FiTrash2 className="mr-1" /> Delete
                     </button>
                   </div>
+                  )}
 
                   <MembersList department={dept} />
                   <StatsPanel department={dept} />
@@ -596,7 +669,6 @@ const refreshDepartments = () => {
                 {modal.type === 'addUser' && `Add User to ${modal.data.name}`}
                 {modal.type === 'assignTask' && `Assign Task in ${modal.data.name}`}
                 {modal.type === 'deleteDept' && `Delete ${modal.data.name}?`}
-                {modal.type === 'deleteTask' && `Delete ${modal.data.name}?`}
               </h2>
               <button 
                 onClick={closeModal} 
@@ -619,12 +691,9 @@ const refreshDepartments = () => {
                   disabled={modalLoading}
                 >
                   <option value="">Select Department</option>
-                  <option value="waste_management_dep">Waste Management</option>
-                  <option value="PVT">PVT</option>
-                  <option value="Environmental_lab_dep">Environmental Lab</option>
-                  <option value="accounts_dep">Accounts</option>
-                  <option value="Human resources">Human Resources</option>
-                  <option value="IT">IT</option>
+                  {DEPARTMENT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
 
                 </div>
@@ -704,25 +773,13 @@ const refreshDepartments = () => {
                     ))}
                   </select>
                 </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Status
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value="Pending" className="text-gray-700">Pending</option>
-                      <option value="InProgress" className="text-gray-700">In Progress</option>
-                      <option value="Completed" className="text-gray-700">Completed</option>
-                    </select>
-                  </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                   <input
                     type="date"
                     className="w-full p-3 border border-gray-300 rounded-lg"
+                    value={formData.dueDate}
+                    min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                     disabled={modalLoading}
                   />
@@ -758,6 +815,12 @@ const refreshDepartments = () => {
               </div>
             )}
 
+            {actionError && (
+              <p role="alert" className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {actionError}
+              </p>
+            )}
+
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={closeModal}
@@ -768,14 +831,16 @@ const refreshDepartments = () => {
               </button>
               <button
                 onClick={async () => {
+                  if (submitting) return;
+                  setSubmitting(true);
+                  setActionError('');
                   try {
                     if (['addDept', 'editDept'].includes(modal.type)) await handleDepartmentSubmit();
                     if (modal.type === 'addUser') await addUserToDepartment();
                     if (modal.type === 'assignTask') await assignTask();
                     if (modal.type === 'deleteDept') await deleteDepartment();
-                    
-                  } catch (err) {
-                    console.error("Action failed:", err);
+                  } finally {
+                    setSubmitting(false);
                   }
                 }}
                 className={`px-4 py-2 text-white rounded-lg ${
@@ -783,9 +848,9 @@ const refreshDepartments = () => {
                     ? 'bg-red-600 hover:bg-red-700' 
                     : 'bg-blue-600 hover:bg-blue-700'
                 }`}
-                disabled={modalLoading}
+                disabled={modalLoading || submitting}
               >
-                {modalLoading ? (
+                {(modalLoading || submitting) ? (
                   <span className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -807,7 +872,6 @@ const refreshDepartments = () => {
           </div>
         </div>
       )}
-      {Error}
     </div>
   );
 };
